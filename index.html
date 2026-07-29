@@ -321,7 +321,8 @@ async function saveTaskToSheets() {
 async function loadTasksFromSheets() {
   try {
     console.log("🔄 開始向 Google 討資料...");
-    
+
+    const range = encodeURIComponent("案件總表!A2:I");
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A2:I`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store" 
