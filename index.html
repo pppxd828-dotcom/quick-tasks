@@ -1,264 +1,157 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>極簡雜事輸入站</title>
+<title>專屬雜事追蹤管理系統</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-  body { font-family: 'Noto Sans TC', system-ui, sans-serif; }
-  .chip-btn { transition: all .12s ease; }
-  .chip-btn:active { transform: scale(0.94); }
-  .chip-active { box-shadow: inset 0 0 0 2px currentColor; }
+  body { font-family: 'Noto Sans TC', system-ui, sans-serif; background-color: #f1f5f9; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 </style>
 </head>
-<body class="bg-[#f4f5f7] text-slate-800 min-h-screen pb-10">
+<body class="text-slate-800 min-h-screen">
 
-<header class="sticky top-0 z-20 bg-white border-b border-slate-200">
-  <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-    <h1 class="text-lg sm:text-xl font-black tracking-tight text-indigo-700">⚡ 極速雜事輸入站</h1>
-    <div class="flex items-center gap-2">
-      <span id="userStatus" class="hidden sm:inline text-xs text-slate-500"></span>
-      <button id="loginBtn" class="px-3 py-1.5 rounded-full bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 active:scale-95 transition">Google 登入</button>
-      <button id="logoutBtn" class="hidden px-3 py-1.5 rounded-full bg-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-300 active:scale-95 transition">登出</button>
+<!-- 頂部導覽列 -->
+<header class="bg-[#1e293b] text-white shadow-md sticky top-0 z-20">
+  <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-500 p-1.5 rounded-lg">🛡️</div>
+      <h1 class="text-lg font-bold tracking-wider">專屬雜事追蹤管理系統</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="userStatus" class="text-xs text-slate-300"></span>
+      <button id="loginBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition">☁️ 雲端同步登入</button>
+      <button id="logoutBtn" class="hidden px-4 py-2 rounded-md bg-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-600 transition">登出</button>
+      <button id="openModalBtn" class="hidden px-4 py-2 rounded-md bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition shadow-sm">+ 新增案件</button>
     </div>
   </div>
 </header>
 
-<main class="max-w-3xl mx-auto px-3 sm:px-4 mt-8">
-  <section id="quickAddPanel" class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
-    <div class="flex justify-end mb-2">
-      <button id="toggleEditBtn" type="button" class="text-[11px] font-bold text-slate-400 hover:text-indigo-500">✏️ 編輯常用按鈕</button>
+<main class="max-w-7xl mx-auto px-4 mt-6">
+  
+  <!-- 四大狀態卡片 (儀表板) -->
+  <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 text-2xl">🚨</div>
+      <div>
+        <p class="text-sm text-slate-500 font-bold">今日急件</p>
+        <p class="text-2xl font-black text-slate-700">0</p>
+      </div>
     </div>
-
-    <!-- 專案快捷鍵 (新加入) -->
-    <div class="flex flex-wrap gap-2 mb-4" id="projectChips">
-      <p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">專案分類</p>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 text-2xl">📥</div>
+      <div>
+        <p class="text-sm text-slate-500 font-bold">待處理清單</p>
+        <p class="text-2xl font-black text-slate-700">0</p>
+      </div>
     </div>
-
-    <!-- 動詞與人物快捷鍵 -->
-    <div class="flex flex-wrap gap-2 mb-4" id="actionChips">
-      <p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">動作</p>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-2xl">🏃</div>
+      <div>
+        <p class="text-sm text-slate-500 font-bold">處理/盤點中</p>
+        <p class="text-2xl font-black text-slate-700">0</p>
+      </div>
     </div>
-    <div class="flex flex-wrap gap-2 mb-5" id="personChips">
-      <p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">對象</p>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 text-2xl">🤝</div>
+      <div>
+        <p class="text-sm text-slate-500 font-bold">卡關/等回覆</p>
+        <p class="text-2xl font-black text-slate-700">0</p>
+      </div>
     </div>
-
-    <!-- 任務名稱 input -->
-    <input id="taskInput" type="text" placeholder="點上方按鈕自動組字，或直接輸入任務標題…"
-      class="w-full px-4 py-3 rounded-xl border border-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3 font-bold">
-    
-    <!-- 備註 textarea (新加入) -->
-    <textarea id="taskNotes" rows="3" placeholder="📝 在這裡貼上表單網址、信件內容或補充細節..."
-      class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4 resize-none"></textarea>
-
-    <!-- 快速期限 -->
-    <div class="flex flex-wrap gap-2 mb-6 items-center" id="dateChips">
-      <p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">期限</p>
-      <input id="customDateInput" type="date" class="hidden px-2 py-1.5 rounded-lg border border-slate-300 text-sm">
-      <span id="selectedDateLabel" class="text-xs font-bold text-indigo-600 ml-1"></span>
-    </div>
-
-    <!-- 送出 -->
-    <button id="addTaskBtn"
-      class="w-full py-4 rounded-xl bg-emerald-600 text-white text-lg font-black tracking-wide hover:bg-emerald-700 active:scale-[0.98] transition shadow-sm">
-      ➕ 快速送出（Add Task）
-    </button>
   </section>
-  <p id="notLoggedInHint" class="text-center text-sm text-slate-400 mt-8">請先點右上角「Google 登入」以啟用新增功能。</p>
+
+  <!-- 案件資料表區域 -->
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+      <div class="flex gap-2">
+        <select class="border border-slate-300 rounded-md px-3 py-1.5 text-sm font-medium focus:ring-blue-500"><option>全部狀態</option></select>
+        <select class="border border-slate-300 rounded-md px-3 py-1.5 text-sm font-medium focus:ring-blue-500"><option>全部類別</option></select>
+      </div>
+      <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100">📥 匯出 Excel</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-white text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200">
+            <th class="px-6 py-4 font-bold">狀態</th>
+            <th class="px-6 py-4 font-bold">專案類別</th>
+            <th class="px-6 py-4 font-bold">聯絡人</th>
+            <th class="px-6 py-4 font-bold">任務摘要</th>
+            <th class="px-6 py-4 font-bold">死線</th>
+            <th class="px-6 py-4 font-bold">最後更新</th>
+          </tr>
+        </thead>
+        <tbody id="taskTableBody" class="text-sm divide-y divide-slate-100">
+          <tr>
+            <td colspan="6" class="px-6 py-10 text-center text-slate-400">請先登入以載入資料...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 </main>
 
+<!-- 新增案件 Modal 表單 -->
+<div id="taskModal" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center">
+  <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+      <h2 class="text-lg font-bold text-slate-800">新增追蹤案件</h2>
+      <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+    </div>
+    <div class="p-6 grid grid-cols-2 gap-4">
+      <div class="col-span-2 sm:col-span-1">
+        <label class="block text-xs font-bold text-slate-500 mb-1">專案類別 (來自 Google Sheets)</label>
+        <select id="categorySelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="">載入中...</option>
+        </select>
+      </div>
+      <div class="col-span-2 sm:col-span-1">
+        <label class="block text-xs font-bold text-slate-500 mb-1">聯絡人 (來自 Google Sheets)</label>
+        <select id="contactSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="">載入中...</option>
+        </select>
+      </div>
+      <div class="col-span-2">
+        <label class="block text-xs font-bold text-slate-500 mb-1">任務摘要</label>
+        <input type="text" id="taskTitle" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500" placeholder="一句話描述這個任務...">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-xs font-bold text-slate-500 mb-1">詳細說明與網址</label>
+        <textarea id="taskDetails" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 resize-none" placeholder="貼上表單連結、錯誤訊息或備註..."></textarea>
+      </div>
+    </div>
+    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+      <button id="cancelBtn" class="px-4 py-2 rounded-lg text-slate-600 font-bold hover:bg-slate-200 text-sm">取消</button>
+      <button class="px-5 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 text-sm shadow-sm">儲存案件</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* === 請將這裡換成你自己的 Client ID === */
+/* === 請換成你的 Client ID === */
 const CLIENT_ID = "370645265767-phukpstpp7prf0ioh2tt6khc6dchk015.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/tasks";
-const TASKS_API = "https://tasks.googleapis.com/tasks/v1/lists/@default/tasks";
+// 擴充權限：加入 Google Sheets API 的讀寫權限
+const SCOPES = "https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/spreadsheets"; 
+// 你提供的 Spreadsheet ID
+const SPREADSHEET_ID = "1Q7ncYV9-a_Vl54spHHH96x_FunVlf15QNLIbARJahq4";
 
 let accessToken = null;
 let tokenClient = null;
 
-const PROJECTS = ["行政", "資安", "專案A", "系統維護"];
-const ACTIONS = [ { emoji: "📞", label: "聯絡" }, { emoji: "✉️", label: "寄信" }, { emoji: "📝", label: "處理" }, { emoji: "🔍", label: "查證回覆" }, { emoji: "⚡", label: "急件" } ];
-const PERSONS = ["老闆", "長官", "業務部", "客戶"];
-
-let customProjects = JSON.parse(localStorage.getItem("customProjects") || "[]");
-let customActions = JSON.parse(localStorage.getItem("customActions") || "[]");
-let customPersons = JSON.parse(localStorage.getItem("customPersons") || "[]");
-let editMode = false;
-
-let selectedProject = null;
-let selectedAction = null; 
-let selectedPerson = null; 
-let selectedDueDate = null;
-
-function saveCustomChips() {
-  localStorage.setItem("customProjects", JSON.stringify(customProjects));
-  localStorage.setItem("customActions", JSON.stringify(customActions));
-  localStorage.setItem("customPersons", JSON.stringify(customPersons));
-}
-
-function chipButton(text, colorClasses, onClick, groupKey, value) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.textContent = text;
-  btn.dataset.group = groupKey;
-  btn.dataset.value = value;
-  btn.className = `chip-btn px-3 py-2.5 rounded-xl border-2 text-sm font-bold ${colorClasses}`;
-  btn.addEventListener("click", onClick);
-  return btn;
-}
-
-function deletableChipButton(text, colorClasses, onClick, groupKey, value, onDelete) {
-  const holder = document.createElement("div");
-  holder.className = "relative";
-  holder.appendChild(chipButton(text, colorClasses, onClick, groupKey, value));
-  const del = document.createElement("button");
-  del.type = "button";
-  del.textContent = "×";
-  del.className = "del-chip-btn hidden absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-xs font-bold leading-5";
-  del.addEventListener("click", (e) => { e.stopPropagation(); onDelete(); });
-  holder.appendChild(del);
-  return holder;
-}
-
-function addChipButton(onAdd) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.textContent = "＋";
-  btn.className = "chip-btn px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-slate-400 font-bold hover:border-indigo-400 hover:text-indigo-500";
-  btn.addEventListener("click", onAdd);
-  return btn;
-}
-
-function applyEditModeUI() {
-  document.querySelectorAll(".del-chip-btn").forEach(el => el.classList.toggle("hidden", !editMode));
-}
-
-document.getElementById("toggleEditBtn").addEventListener("click", () => {
-  editMode = !editMode;
-  applyEditModeUI();
-});
-
-// 渲染專案標籤
-function renderProjectChips() {
-  const wrap = document.getElementById("projectChips");
-  wrap.innerHTML = '<p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">專案分類</p>';
-  const onClickFactory = (val) => () => { selectedProject = (selectedProject === val) ? null : val; refreshChipStates(); };
-  
-  PROJECTS.forEach(p => wrap.appendChild(chipButton(p, "border-fuchsia-200 text-fuchsia-700 bg-fuchsia-50", onClickFactory(p), "project", p)));
-  customProjects.forEach(p => {
-    wrap.appendChild(deletableChipButton(p, "border-fuchsia-200 text-fuchsia-700 bg-fuchsia-50", onClickFactory(p), "project", p, () => {
-      customProjects = customProjects.filter(v => v !== p);
-      if (selectedProject === p) selectedProject = null;
-      saveCustomChips(); renderProjectChips(); applyEditModeUI();
-    }));
-  });
-  wrap.appendChild(addChipButton(() => {
-    const text = prompt("輸入新的專案名稱：");
-    if (text && text.trim()) { customProjects.push(text.trim()); saveCustomChips(); renderProjectChips(); applyEditModeUI(); }
-  }));
-}
-
-function renderActionChips() {
-  const wrap = document.getElementById("actionChips");
-  wrap.innerHTML = '<p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">動作</p>';
-  const onClickFactory = (val) => () => { selectedAction = (selectedAction === val) ? null : val; refreshChipStates(); rebuildInputPrefix(); };
-  
-  ACTIONS.forEach(a => {
-    const val = `${a.emoji} ${a.label}`;
-    wrap.appendChild(chipButton(val, "border-indigo-200 text-indigo-700 bg-indigo-50", onClickFactory(val), "action", val));
-  });
-  customActions.forEach(val => {
-    wrap.appendChild(deletableChipButton(val, "border-indigo-200 text-indigo-700 bg-indigo-50", onClickFactory(val), "action", val, () => {
-      customActions = customActions.filter(v => v !== val);
-      if (selectedAction === val) selectedAction = null;
-      saveCustomChips(); renderActionChips(); applyEditModeUI();
-    }));
-  });
-  wrap.appendChild(addChipButton(() => {
-    const text = prompt("輸入新的動作按鈕文字（可含 emoji）：");
-    if (text && text.trim()) { customActions.push(text.trim()); saveCustomChips(); renderActionChips(); applyEditModeUI(); }
-  }));
-}
-
-function renderPersonChips() {
-  const wrap = document.getElementById("personChips");
-  wrap.innerHTML = '<p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">對象</p>';
-  const onClickFactory = (p) => () => { selectedPerson = (selectedPerson === p) ? null : p; refreshChipStates(); rebuildInputPrefix(); };
-
-  PERSONS.forEach(p => wrap.appendChild(chipButton(p, "border-sky-200 text-sky-700 bg-sky-50", onClickFactory(p), "person", p)));
-  customPersons.forEach(p => {
-    wrap.appendChild(deletableChipButton(p, "border-sky-200 text-sky-700 bg-sky-50", onClickFactory(p), "person", p, () => {
-      customPersons = customPersons.filter(v => v !== p);
-      if (selectedPerson === p) selectedPerson = null;
-      saveCustomChips(); renderPersonChips(); applyEditModeUI();
-    }));
-  });
-  wrap.appendChild(addChipButton(() => {
-    const text = prompt("輸入新的對象按鈕文字：");
-    if (text && text.trim()) { customPersons.push(text.trim()); saveCustomChips(); renderPersonChips(); applyEditModeUI(); }
-  }));
-}
-
-function renderDateChips() {
-  const wrap = document.getElementById("dateChips");
-  const customInput = document.getElementById("customDateInput");
-  const defs = [
-    { label: "今天", get: () => new Date() },
-    { label: "明天", get: () => addDays(new Date(), 1) },
-    { label: "下週一", get: () => nextMonday(new Date()) },
-  ];
-  defs.forEach(d => {
-    const btn = chipButton(d.label, "border-teal-200 text-teal-700 bg-teal-50", () => {
-      selectedDueDate = d.get(); customInput.classList.add("hidden"); customInput.value = ""; refreshChipStates(); updateDateLabel();
-    }, "date", d.label);
-    wrap.insertBefore(btn, customInput);
-  });
-  const customBtn = chipButton("📅 自訂日期", "border-slate-300 text-slate-600 bg-slate-50", () => {
-    customInput.classList.toggle("hidden"); if (!customInput.classList.contains("hidden")) customInput.focus();
-  }, "date", "custom");
-  wrap.insertBefore(customBtn, customInput);
-
-  customInput.addEventListener("change", () => {
-    if (customInput.value) { selectedDueDate = new Date(customInput.value + "T00:00:00"); refreshChipStates("custom-active"); updateDateLabel(); }
-  });
-}
-
-function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
-function nextMonday(date) { const d = new Date(date); const diff = (8 - d.getDay()) % 7 || 7; d.setDate(d.getDate() + diff); return d; }
-function formatDateLabel(d) { return `${d.getMonth() + 1}/${d.getDate()}`; }
-function updateDateLabel() { document.getElementById("selectedDateLabel").textContent = selectedDueDate ? `→ ${formatDateLabel(selectedDueDate)}` : ""; }
-
-function refreshChipStates() {
-  document.querySelectorAll('[data-group="project"]').forEach(b => b.classList.toggle("chip-active", b.dataset.value === selectedProject));
-  document.querySelectorAll('[data-group="action"]').forEach(b => b.classList.toggle("chip-active", b.dataset.value === selectedAction));
-  document.querySelectorAll('[data-group="person"]').forEach(b => b.classList.toggle("chip-active", b.dataset.value === selectedPerson));
-}
-
-function rebuildInputPrefix() {
-  const input = document.getElementById("taskInput");
-  const current = input.value;
-  const idx = current.indexOf("：");
-  const remainder = idx >= 0 ? current.slice(idx + 1) : current;
-  const parts = [];
-  if (selectedAction) parts.push(selectedAction);
-  if (selectedPerson) parts.push(selectedPerson);
-  const prefix = parts.length ? parts.join(" ") + "：" : "";
-  input.value = prefix + remainder;
-  input.focus();
-}
+// Modal 控制邏輯
+const modal = document.getElementById("taskModal");
+document.getElementById("openModalBtn").addEventListener("click", () => modal.classList.remove("hidden"));
+document.getElementById("closeModalBtn").addEventListener("click", () => modal.classList.add("hidden"));
+document.getElementById("cancelBtn").addEventListener("click", () => modal.classList.add("hidden"));
 
 window.addEventListener("load", () => {
-  renderProjectChips();
-  renderActionChips();
-  renderPersonChips();
-  renderDateChips();
-
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
@@ -266,6 +159,8 @@ window.addEventListener("load", () => {
       if (resp.error) return alert("登入失敗：" + resp.error);
       accessToken = resp.access_token;
       setLoggedInUI(true);
+      // 登入成功後，立刻去抓取設定！
+      loadSettingsFromSheets();
     },
   });
 
@@ -273,73 +168,55 @@ window.addEventListener("load", () => {
   document.getElementById("logoutBtn").addEventListener("click", () => {
     if (accessToken) google.accounts.oauth2.revoke(accessToken, () => { accessToken = null; setLoggedInUI(false); });
   });
-  document.getElementById("addTaskBtn").addEventListener("click", handleAddTask);
 });
 
 function setLoggedInUI(loggedIn) {
   document.getElementById("loginBtn").classList.toggle("hidden", loggedIn);
   document.getElementById("logoutBtn").classList.toggle("hidden", !loggedIn);
-  document.getElementById("userStatus").textContent = loggedIn ? "已連結 Google Tasks" : "";
-  document.getElementById("notLoggedInHint").classList.toggle("hidden", loggedIn);
+  document.getElementById("openModalBtn").classList.toggle("hidden", !loggedIn);
+  document.getElementById("userStatus").textContent = loggedIn ? "✅ 已連線至資料庫" : "";
 }
 
-async function apiFetch(url, options = {}) {
-  const res = await fetch(url, {
-    ...options,
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", ...(options.headers || {}) },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.status === 204 ? null : res.json();
-}
-
-async function handleAddTask() {
-  const input = document.getElementById("taskInput");
-  const notesInput = document.getElementById("taskNotes");
-  let title = input.value.trim();
-  const notes = notesInput.value.trim();
-
-  if (!title) return alert("請輸入或組合任務標題");
-  if (!accessToken) return alert("請先登入 Google");
-
-  // 如果有選擇專案，把專案名稱加在標題最前面
-  if (selectedProject) {
-    title = `[${selectedProject}] ${title}`;
-  }
-
-  const body = { title, notes };
-  
-  if (selectedDueDate) {
-    const d = selectedDueDate;
-    body.due = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T00:00:00.000Z`;
-  }
-
-  const btn = document.getElementById("addTaskBtn");
-  btn.disabled = true;
-  btn.innerHTML = "⏳ 處理中...";
-
+// 核心功能：從 Google Sheets 抓取自訂選項
+async function loadSettingsFromSheets() {
   try {
-    await apiFetch(TASKS_API, { method: "POST", body: JSON.stringify(body) });
-    resetQuickAddForm();
-    alert("✅ 任務新增成功！");
-  } catch (e) {
-    alert("新增任務失敗");
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = "➕ 快速送出（Add Task）";
-  }
-}
+    // 1. 抓取專案類別 (系統設定!A2:A)
+    const catRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!A2:A`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const catData = await catRes.json();
+    
+    // 2. 抓取聯絡人 (系統設定!C2:E)
+    const contactRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!C2:E`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const contactData = await contactRes.json();
 
-function resetQuickAddForm() {
-  selectedProject = null;
-  selectedAction = null;
-  selectedPerson = null;
-  selectedDueDate = null;
-  document.getElementById("taskInput").value = "";
-  document.getElementById("taskNotes").value = "";
-  document.getElementById("customDateInput").value = "";
-  document.getElementById("customDateInput").classList.add("hidden");
-  document.getElementById("selectedDateLabel").textContent = "";
-  refreshChipStates();
+    // 3. 更新下拉式選單
+    const catSelect = document.getElementById("categorySelect");
+    catSelect.innerHTML = '<option value="">請選擇...</option>';
+    if (catData.values) {
+      catData.values.forEach(row => {
+        if(row[0]) catSelect.innerHTML += `<option value="${row[0]}">${row[0]}</option>`;
+      });
+    }
+
+    const contactSelect = document.getElementById("contactSelect");
+    contactSelect.innerHTML = '<option value="">請選擇...</option>';
+    if (contactData.values) {
+      contactData.values.forEach(row => {
+        // row[0] 是名稱, row[1] 是分機, row[2] 是Email
+        if(row[0]) {
+          const ext = row[1] ? ` (分機: ${row[1]})` : '';
+          contactSelect.innerHTML += `<option value="${row[0]}">${row[0]}${ext}</option>`;
+        }
+      });
+    }
+    console.log("✅ 系統設定載入成功！");
+  } catch (error) {
+    console.error("載入設定失敗:", error);
+    alert("讀取試算表失敗，請確定你有建立『系統設定』分頁，並且欄位名稱正確。");
+  }
 }
 </script>
 </body>
