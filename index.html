@@ -160,22 +160,46 @@ document.getElementById("closeModalBtn").addEventListener("click", () => modal.c
 document.getElementById("cancelBtn").addEventListener("click", () => modal.classList.add("hidden"));
 
 window.addEventListener("load", () => {
+  // 1. 網頁載入時，先去 localStorage 找找看有沒有之前存下來的 Token
+  const savedToken = localStorage.getItem("google_access_token");
+  if (savedToken) {
+    accessToken = savedToken;
+    setLoggedInUI(true);
+    loadSettingsFromSheets();
+    loadTasksFromSheets();
+  }
+
+  // 2. 初始化 Google 登入客戶端
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (resp) => {
       if (resp.error) return alert("登入失敗：" + resp.error);
       accessToken = resp.access_token;
+      
+      // 💡 關鍵新增：登入成功後，把 Token 存進瀏覽器！
+      localStorage.setItem("google_access_token", accessToken);
+      
       setLoggedInUI(true);
-      // 登入成功後，立刻去抓取設定！
       loadSettingsFromSheets();
       loadTasksFromSheets();
     },
   });
 
+  // 3. 綁定按鈕
   document.getElementById("loginBtn").addEventListener("click", () => tokenClient.requestAccessToken({ prompt: "consent" }));
+  
   document.getElementById("logoutBtn").addEventListener("click", () => {
-    if (accessToken) google.accounts.oauth2.revoke(accessToken, () => { accessToken = null; setLoggedInUI(false); });
+    // 💡 關鍵新增：登出時，把瀏覽器裡的 Token 刪掉
+    localStorage.removeItem("google_access_token");
+    if (accessToken) {
+      google.accounts.oauth2.revoke(accessToken, () => { 
+        accessToken = null; 
+        setLoggedInUI(false); 
+      });
+    } else {
+      setLoggedInUI(false);
+    }
   });
 });
 
@@ -298,8 +322,18 @@ async function loadTasksFromSheets() {
   try {
     // 抓取「案件總表」的 A2 到 I 欄 (跳過第一列的標題)
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A2:I`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: `Bearer ${accessToken}`,
+      cache: "no-store" }// 強迫系統不使用快取，每次都抓最新資料！
     });
+    
+    // 防呆機制：如果發現 Token 過期 (回傳 401)，自動要求重新登入
+    if (response.status === 401) {
+      alert("⚠️ 登入憑證已過期，請重新登入！");
+      localStorage.removeItem("google_access_token");
+      setLoggedInUI(false);
+      return;
+    }
+    
     const data = await response.json();
     
     const tbody = document.getElementById("taskTableBody");
