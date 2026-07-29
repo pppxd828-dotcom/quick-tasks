@@ -83,6 +83,7 @@
             <th class="px-6 py-4 font-bold">狀態</th>
             <th class="px-6 py-4 font-bold">專案類別</th>
             <th class="px-6 py-4 font-bold">聯絡人</th>
+            <th class="px-6 py-4 font-bold">任務來源</th>
             <th class="px-6 py-4 font-bold">任務摘要</th>
             <th class="px-6 py-4 font-bold">死線</th>
             <th class="px-6 py-4 font-bold">最後更新</th>
@@ -117,6 +118,10 @@
         <select id="contactSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
           <option value="">載入中...</option>
         </select>
+      </div>
+      <div class="col-span-2 sm:col-span-1">
+        <label class="block text-xs font-bold text-slate-500 mb-1">任務來源</label>
+        <input type="text" id="taskSource" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="例：LINE、Email、長官口頭">
       </div>
       <div class="col-span-2">
         <label class="block text-xs font-bold text-slate-500 mb-1">任務摘要</label>
@@ -225,56 +230,53 @@ document.getElementById("saveTaskBtn").addEventListener("click", saveTaskToSheet
 async function saveTaskToSheets() {
   if (!accessToken) return alert("請先登入！");
 
-  // 1. 抓取表單填寫的資料
   const category = document.getElementById("categorySelect").value;
   const contact = document.getElementById("contactSelect").value;
+  const source = document.getElementById("taskSource").value; // 1. 抓取任務來源
   const title = document.getElementById("taskTitle").value;
   const details = document.getElementById("taskDetails").value;
   
   if (!title) return alert("任務摘要不能是空的喔！");
 
-  // 2. 準備要寫入的資料格式 (對應你的欄位：狀態 | 類別 | 聯絡人 | 摘要 | 詳細說明 | 死線 | 建立時間 | 最後更新)
-  const now = new Date().toLocaleString('zh-TW'); // 取得現在時間
+  const now = new Date().toLocaleString('zh-TW');
+  
+  // 2. 依照試算表的 A~I 欄位順序排好陣列
   const rowData = [
-    "待處理", // 預設狀態
-    category,
-    contact,
-    title,
-    details,
-    "", // 死線先留空，之後可擴充
-    now,
-    now
+    "待處理",   // A
+    category,   // B
+    contact,    // C
+    source,     // D (新加入的任務來源)
+    title,      // E
+    details,    // F
+    "",         // G (死線)
+    now,        // H (建立時間)
+    now         // I (最後更新)
   ];
 
   try {
-    // 3. 呼叫 Google Sheets API 的 Append 功能，把資料寫進「案件總表」
-    // 注意：這裡假設你的第一個分頁名稱叫做「案件總表」
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:H:append?valueInputOption=USER_ENTERED`, {
+    // 3. 注意這裡的範圍從 A:H 改成了 A:I
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:I:append?valueInputOption=USER_ENTERED`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        values: [rowData]
-      })
+      body: JSON.stringify({ values: [rowData] })
     });
 
     const result = await response.json();
     
     if (result.updates) {
-      alert("✅ 案件儲存成功！去看看你的 Google 試算表吧！");
-      // 清空表單並關閉 Modal
+      alert("✅ 案件儲存成功！");
+      document.getElementById("taskSource").value = ""; // 清空新增的欄位
       document.getElementById("taskTitle").value = "";
       document.getElementById("taskDetails").value = "";
       modal.classList.add("hidden");
     } else {
       console.error("儲存失敗:", result);
-      alert("儲存失敗，請檢查 Console 了解詳情。");
     }
   } catch (error) {
     console.error("發生錯誤:", error);
-    alert("系統發生錯誤，無法儲存。");
   }
 }
 </script>
