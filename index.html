@@ -169,6 +169,7 @@ window.addEventListener("load", () => {
       setLoggedInUI(true);
       // 登入成功後，立刻去抓取設定！
       loadSettingsFromSheets();
+      loadTasksFromSheets();
     },
   });
 
@@ -283,11 +284,69 @@ async function saveTaskToSheets() {
       document.getElementById("taskTitle").value = "";
       document.getElementById("taskDetails").value = "";
       modal.classList.add("hidden");
+
+      loadTasksFromSheets(); // 儲存成功後自動重新整理表格！
     } else {
       console.error("儲存失敗:", result);
     }
   } catch (error) {
     console.error("發生錯誤:", error);
+  }
+}
+// 核心功能：從 Google Sheets 讀取案件總表並顯示在畫面上
+async function loadTasksFromSheets() {
+  try {
+    // 抓取「案件總表」的 A2 到 I 欄 (跳過第一列的標題)
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A2:I`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await response.json();
+    
+    const tbody = document.getElementById("taskTableBody");
+    tbody.innerHTML = ""; // 先清空原本的「請先登入...」文字
+
+    // 如果完全沒有資料
+    if (!data.values || data.values.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-10 text-center text-slate-400 font-bold">目前沒有任何案件，太棒了！🎉</td></tr>';
+      return;
+    }
+
+    // 將資料反轉，讓最新新增的案件排在表格最上面
+    const rows = data.values.reverse(); 
+    
+    rows.forEach(row => {
+      // 對應試算表欄位: 0:狀態, 1:類別, 2:聯絡人, 3:來源, 4:摘要, 5:詳細, 6:死線, 7:建立時間, 8:最後更新
+      const status = row[0] || "未定";
+      const category = row[1] || "";
+      const contact = row[2] || "";
+      const source = row[3] || "";
+      const title = row[4] || "";
+      const deadline = row[6] || "-";
+      const lastUpdate = row[8] || row[7] || ""; // 如果沒有最後更新，就拿建立時間
+
+      // 幫不同的「狀態」加上不同的顏色標籤，視覺更清楚
+      let statusColor = "bg-slate-100 text-slate-600";
+      if (status.includes("待處理")) statusColor = "bg-amber-100 text-amber-700";
+      else if (status.includes("進行中")) statusColor = "bg-blue-100 text-blue-700";
+      else if (status.includes("結案")) statusColor = "bg-emerald-100 text-emerald-700";
+
+      // 把資料組合成本 HTML 表格的 <tr> 行
+      tbody.innerHTML += `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-0">
+          <td class="px-6 py-3"><span class="px-2 py-1 rounded-md text-xs font-bold ${statusColor}">${status}</span></td>
+          <td class="px-6 py-3 font-medium text-slate-700">${category}</td>
+          <td class="px-6 py-3 text-slate-600">${contact}</td>
+          <td class="px-6 py-3 text-slate-400 text-xs">${source}</td>
+          <td class="px-6 py-3 font-bold text-slate-800">${title}</td>
+          <td class="px-6 py-3 text-rose-500 font-medium text-sm">${deadline}</td>
+          <td class="px-6 py-3 text-xs text-slate-400">${lastUpdate}</td>
+        </tr>
+      `;
+    });
+    
+    console.log("✅ 案件總表載入成功！");
+  } catch (error) {
+    console.error("載入案件失敗:", error);
   }
 }
 </script>
