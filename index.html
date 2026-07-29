@@ -120,8 +120,10 @@
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1">
-        <label class="block text-xs font-bold text-slate-500 mb-1">任務來源</label>
-        <input type="text" id="taskSource" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="例：LINE、Email、長官口頭">
+        <label class="block text-xs font-bold text-slate-500 mb-1">任務來源 (來自 Google Sheets)</label>
+        <select id="taskSource" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="">載入中...</option>
+       </select>
       </div>
       <div class="col-span-2">
         <label class="block text-xs font-bold text-slate-500 mb-1">任務摘要</label>
@@ -186,19 +188,18 @@ function setLoggedInUI(loggedIn) {
 // 核心功能：從 Google Sheets 抓取自訂選項
 async function loadSettingsFromSheets() {
   try {
-    // 1. 抓取專案類別 (系統設定!A2:A)
-    const catRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!A2:A`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    const catData = await catRes.json();
-    
-    // 2. 抓取聯絡人 (系統設定!C2:E)
-    const contactRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!C2:E`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    const contactData = await contactRes.json();
+    // 1. 同時發送三個請求，抓取類別、聯絡人，以及新增的「任務來源」(假設在 G 欄)
+    const [catRes, contactRes, sourceRes] = await Promise.all([
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!A2:A`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!C2:E`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!G2:G`, { headers: { Authorization: `Bearer ${accessToken}` } }) // 新增這行抓取 G 欄
+    ]);
 
-    // 3. 更新下拉式選單
+    const catData = await catRes.json();
+    const contactData = await contactRes.json();
+    const sourceData = await sourceRes.json(); // 解析任務來源資料
+
+    // 2. 更新「專案類別」選單
     const catSelect = document.getElementById("categorySelect");
     catSelect.innerHTML = '<option value="">請選擇...</option>';
     if (catData.values) {
@@ -207,17 +208,27 @@ async function loadSettingsFromSheets() {
       });
     }
 
+    // 3. 更新「聯絡人」選單
     const contactSelect = document.getElementById("contactSelect");
     contactSelect.innerHTML = '<option value="">請選擇...</option>';
     if (contactData.values) {
       contactData.values.forEach(row => {
-        // row[0] 是名稱, row[1] 是分機, row[2] 是Email
         if(row[0]) {
           const ext = row[1] ? ` (分機: ${row[1]})` : '';
           contactSelect.innerHTML += `<option value="${row[0]}">${row[0]}${ext}</option>`;
         }
       });
     }
+
+    // 4. 更新「任務來源」選單 (新加入的邏輯)
+    const sourceSelect = document.getElementById("taskSource");
+    sourceSelect.innerHTML = '<option value="">請選擇...</option>';
+    if (sourceData.values) {
+      sourceData.values.forEach(row => {
+        if(row[0]) sourceSelect.innerHTML += `<option value="${row[0]}">${row[0]}</option>`;
+      });
+    }
+
     console.log("✅ 系統設定載入成功！");
   } catch (error) {
     console.error("載入設定失敗:", error);
