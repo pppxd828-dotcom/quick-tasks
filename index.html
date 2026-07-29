@@ -4,39 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>極簡雜事輸入站</title>
-
-<!--
-  ============================================================
-  設定說明（請依序完成，否則登入按鈕會無法運作）
-  ============================================================
-  1. 前往 https://console.cloud.google.com/ 建立（或選擇）一個專案。
-  2. 左側選單「API 和服務」→「已啟用的 API 和服務」→
-     點「啟用 API 和服務」，搜尋並啟用「Google Tasks API」。
-  3. 左側選單「API 和服務」→「OAuth 同意畫面」：
-     - 使用者類型選「外部」（測試階段即可，不需要送審）。
-     - 填寫應用程式名稱、支援電子郵件即可儲存。
-     - 在「測試使用者」加入你自己的 Google 帳號 email（未送審前只有
-       這裡列出的帳號能登入）。
-     - Scopes 不用特別加，程式會在執行階段動態要求
-       https://www.googleapis.com/auth/tasks 權限。
-  4. 左側選單「API 和服務」→「憑證」→「建立憑證」→
-     「OAuth 用戶端 ID」：
-     - 應用程式類型選「網頁應用程式」。
-     - 「已授權的 JavaScript 來源」務必填入你實際存取這個網頁的網址
-       （例如 http://localhost:8080 或 https://yourname.github.io），
-       "file://" 開啟本機檔案無法使用 GIS 登入，請務必用本機伺服器
-       （例如 `npx serve` 或 VSCode Live Server）或部署後再測試。
-     - 建立後複製「用戶端 ID」，貼到下方 CLIENT_ID 變數。
-  5. 將下面 const CLIENT_ID = "在此貼上你的 Client ID.apps.googleusercontent.com";
-     取代為你自己的 Client ID，存檔即可。
-  ============================================================
--->
-
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-
 <style>
   body { font-family: 'Noto Sans TC', system-ui, sans-serif; }
   .chip-btn { transition: all .12s ease; }
@@ -46,58 +17,49 @@
   ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
 </style>
 </head>
-
 <body class="bg-[#f4f5f7] text-slate-800 min-h-screen pb-10">
 
-<!-- ============ 頂部導覽列 ============ -->
 <header class="sticky top-0 z-20 bg-white border-b border-slate-200">
   <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
     <h1 class="text-lg sm:text-xl font-black tracking-tight text-indigo-700">⚡ 極速雜事輸入站</h1>
     <div class="flex items-center gap-2">
       <span id="userStatus" class="hidden sm:inline text-xs text-slate-500"></span>
-      <button id="loginBtn"
-        class="px-3 py-1.5 rounded-full bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 active:scale-95 transition">
-        Google 登入
-      </button>
-      <button id="logoutBtn"
-        class="hidden px-3 py-1.5 rounded-full bg-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-300 active:scale-95 transition">
-        登出
-      </button>
+      <button id="loginBtn" class="px-3 py-1.5 rounded-full bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 active:scale-95 transition">Google 登入</button>
+      <button id="logoutBtn" class="hidden px-3 py-1.5 rounded-full bg-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-300 active:scale-95 transition">登出</button>
     </div>
   </div>
 </header>
 
 <main class="max-w-3xl mx-auto px-3 sm:px-4 mt-8">
-
-  <!-- ============ 極速輸入區 ============ -->
   <section id="quickAddPanel" class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
-
     <div class="flex justify-end mb-2">
-      <button id="toggleEditBtn" type="button" class="text-[11px] font-bold text-slate-400 hover:text-indigo-500">
-        ✏️ 編輯常用按鈕
-      </button>
+      <button id="toggleEditBtn" type="button" class="text-[11px] font-bold text-slate-400 hover:text-indigo-500">✏️ 編輯常用按鈕</button>
     </div>
 
-    <!-- 動詞快捷鍵 -->
+    <!-- 專案快捷鍵 (新加入) -->
+    <div class="flex flex-wrap gap-2 mb-4" id="projectChips">
+      <p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">專案分類</p>
+    </div>
+
+    <!-- 動詞與人物快捷鍵 -->
     <div class="flex flex-wrap gap-2 mb-4" id="actionChips">
       <p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">動作</p>
-      <!-- injected by JS -->
     </div>
-
-    <!-- 人物快捷鍵 -->
     <div class="flex flex-wrap gap-2 mb-5" id="personChips">
       <p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">對象</p>
-      <!-- injected by JS -->
     </div>
 
     <!-- 任務名稱 input -->
-    <input id="taskInput" type="text" placeholder="點上方按鈕自動組字，或直接輸入…"
-      class="w-full px-4 py-3 rounded-xl border border-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4">
+    <input id="taskInput" type="text" placeholder="點上方按鈕自動組字，或直接輸入任務標題…"
+      class="w-full px-4 py-3 rounded-xl border border-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3 font-bold">
+    
+    <!-- 備註 textarea (新加入) -->
+    <textarea id="taskNotes" rows="3" placeholder="📝 在這裡貼上表單網址、信件內容或補充細節..."
+      class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4 resize-none"></textarea>
 
     <!-- 快速期限 -->
     <div class="flex flex-wrap gap-2 mb-6 items-center" id="dateChips">
       <p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">期限</p>
-      <!-- injected by JS -->
       <input id="customDateInput" type="date" class="hidden px-2 py-1.5 rounded-lg border border-slate-300 text-sm">
       <span id="selectedDateLabel" class="text-xs font-bold text-indigo-600 ml-1"></span>
     </div>
@@ -108,16 +70,11 @@
       ➕ 快速送出（Add Task）
     </button>
   </section>
-
-  <p id="notLoggedInHint" class="text-center text-sm text-slate-400 mt-8">
-    請先點右上角「Google 登入」以啟用新增功能。
-  </p>
+  <p id="notLoggedInHint" class="text-center text-sm text-slate-400 mt-8">請先點右上角「Google 登入」以啟用新增功能。</p>
 </main>
 
 <script>
-/* ============================================================
- * 0. 設定：請將這裡換成你自己的 Client ID
- * ==========================================================*/
+/* === 請將這裡換成你自己的 Client ID === */
 const CLIENT_ID = "370645265767-phukpstpp7prf0ioh2tt6khc6dchk015.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/tasks";
 const TASKS_API = "https://tasks.googleapis.com/tasks/v1/lists/@default/tasks";
@@ -125,35 +82,26 @@ const TASKS_API = "https://tasks.googleapis.com/tasks/v1/lists/@default/tasks";
 let accessToken = null;
 let tokenClient = null;
 
-/* ============================================================
- * 1. 快捷按鈕資料
- * ==========================================================*/
-const ACTIONS = [
-  { emoji: "📞", label: "聯絡" },
-  { emoji: "✉️", label: "寄信" },
-  { emoji: "📝", label: "文件" },
-  { emoji: "💬", label: "討論" },
-  { emoji: "📦", label: "跑腿" },
-];
-const PERSONS = ["老闆", "主管", "同事A", "客戶"];
+const PROJECTS = ["行政", "資安", "專案A", "系統維護"];
+const ACTIONS = [ { emoji: "📞", label: "聯絡" }, { emoji: "✉️", label: "寄信" }, { emoji: "📝", label: "處理" }, { emoji: "🔍", label: "查證回覆" }, { emoji: "⚡", label: "急件" } ];
+const PERSONS = ["老闆", "長官", "業務部", "客戶"];
 
-// 使用者自訂的常用按鈕（存在 localStorage，重整後仍會保留）
+let customProjects = JSON.parse(localStorage.getItem("customProjects") || "[]");
 let customActions = JSON.parse(localStorage.getItem("customActions") || "[]");
 let customPersons = JSON.parse(localStorage.getItem("customPersons") || "[]");
 let editMode = false;
 
-let selectedAction = null; // "📞 聯絡"
-let selectedPerson = null; // "老闆"
-let selectedDueDate = null; // Date object
+let selectedProject = null;
+let selectedAction = null; 
+let selectedPerson = null; 
+let selectedDueDate = null;
 
 function saveCustomChips() {
+  localStorage.setItem("customProjects", JSON.stringify(customProjects));
   localStorage.setItem("customActions", JSON.stringify(customActions));
   localStorage.setItem("customPersons", JSON.stringify(customPersons));
 }
 
-/* ============================================================
- * 2. 產生快捷按鈕
- * ==========================================================*/
 function chipButton(text, colorClasses, onClick, groupKey, value) {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -165,32 +113,24 @@ function chipButton(text, colorClasses, onClick, groupKey, value) {
   return btn;
 }
 
-// 產生可刪除的自訂按鈕
 function deletableChipButton(text, colorClasses, onClick, groupKey, value, onDelete) {
   const holder = document.createElement("div");
   holder.className = "relative";
   holder.appendChild(chipButton(text, colorClasses, onClick, groupKey, value));
-
   const del = document.createElement("button");
   del.type = "button";
   del.textContent = "×";
-  del.className =
-    "del-chip-btn hidden absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-xs font-bold leading-5";
-  del.addEventListener("click", (e) => {
-    e.stopPropagation();
-    onDelete();
-  });
+  del.className = "del-chip-btn hidden absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-xs font-bold leading-5";
+  del.addEventListener("click", (e) => { e.stopPropagation(); onDelete(); });
   holder.appendChild(del);
   return holder;
 }
 
-// "+" 新增按鈕
 function addChipButton(onAdd) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.textContent = "＋";
-  btn.className =
-    "chip-btn px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-slate-400 font-bold hover:border-indigo-400 hover:text-indigo-500";
+  btn.className = "chip-btn px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-slate-400 font-bold hover:border-indigo-400 hover:text-indigo-500";
   btn.addEventListener("click", onAdd);
   return btn;
 }
@@ -204,173 +144,117 @@ document.getElementById("toggleEditBtn").addEventListener("click", () => {
   applyEditModeUI();
 });
 
+// 渲染專案標籤
+function renderProjectChips() {
+  const wrap = document.getElementById("projectChips");
+  wrap.innerHTML = '<p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">專案分類</p>';
+  const onClickFactory = (val) => () => { selectedProject = (selectedProject === val) ? null : val; refreshChipStates(); };
+  
+  PROJECTS.forEach(p => wrap.appendChild(chipButton(p, "border-fuchsia-200 text-fuchsia-700 bg-fuchsia-50", onClickFactory(p), "project", p)));
+  customProjects.forEach(p => {
+    wrap.appendChild(deletableChipButton(p, "border-fuchsia-200 text-fuchsia-700 bg-fuchsia-50", onClickFactory(p), "project", p, () => {
+      customProjects = customProjects.filter(v => v !== p);
+      if (selectedProject === p) selectedProject = null;
+      saveCustomChips(); renderProjectChips(); applyEditModeUI();
+    }));
+  });
+  wrap.appendChild(addChipButton(() => {
+    const text = prompt("輸入新的專案名稱：");
+    if (text && text.trim()) { customProjects.push(text.trim()); saveCustomChips(); renderProjectChips(); applyEditModeUI(); }
+  }));
+}
+
 function renderActionChips() {
   const wrap = document.getElementById("actionChips");
   wrap.innerHTML = '<p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">動作</p>';
-
-  const onClickFactory = (val) => () => {
-    selectedAction = (selectedAction === val) ? null : val;
-    refreshChipStates();
-    rebuildInputPrefix();
-  };
-
+  const onClickFactory = (val) => () => { selectedAction = (selectedAction === val) ? null : val; refreshChipStates(); rebuildInputPrefix(); };
+  
   ACTIONS.forEach(a => {
     const val = `${a.emoji} ${a.label}`;
     wrap.appendChild(chipButton(val, "border-indigo-200 text-indigo-700 bg-indigo-50", onClickFactory(val), "action", val));
   });
-
   customActions.forEach(val => {
-    wrap.appendChild(
-      deletableChipButton(val, "border-indigo-200 text-indigo-700 bg-indigo-50", onClickFactory(val), "action", val, () => {
-        customActions = customActions.filter(v => v !== val);
-        if (selectedAction === val) selectedAction = null;
-        saveCustomChips();
-        renderActionChips();
-        applyEditModeUI();
-      })
-    );
+    wrap.appendChild(deletableChipButton(val, "border-indigo-200 text-indigo-700 bg-indigo-50", onClickFactory(val), "action", val, () => {
+      customActions = customActions.filter(v => v !== val);
+      if (selectedAction === val) selectedAction = null;
+      saveCustomChips(); renderActionChips(); applyEditModeUI();
+    }));
   });
-
-  wrap.appendChild(
-    addChipButton(() => {
-      const text = prompt("輸入新的動作按鈕文字（可含 emoji），例如：🔧 維修");
-      if (text && text.trim()) {
-        customActions.push(text.trim());
-        saveCustomChips();
-        renderActionChips();
-        applyEditModeUI();
-      }
-    })
-  );
+  wrap.appendChild(addChipButton(() => {
+    const text = prompt("輸入新的動作按鈕文字（可含 emoji）：");
+    if (text && text.trim()) { customActions.push(text.trim()); saveCustomChips(); renderActionChips(); applyEditModeUI(); }
+  }));
 }
 
 function renderPersonChips() {
   const wrap = document.getElementById("personChips");
   wrap.innerHTML = '<p class="w-full text-[11px] font-bold text-slate-400 tracking-wide">對象</p>';
+  const onClickFactory = (p) => () => { selectedPerson = (selectedPerson === p) ? null : p; refreshChipStates(); rebuildInputPrefix(); };
 
-  const onClickFactory = (p) => () => {
-    selectedPerson = (selectedPerson === p) ? null : p;
-    refreshChipStates();
-    rebuildInputPrefix();
-  };
-
-  PERSONS.forEach(p => {
-    wrap.appendChild(chipButton(p, "border-sky-200 text-sky-700 bg-sky-50", onClickFactory(p), "person", p));
-  });
-
+  PERSONS.forEach(p => wrap.appendChild(chipButton(p, "border-sky-200 text-sky-700 bg-sky-50", onClickFactory(p), "person", p)));
   customPersons.forEach(p => {
-    wrap.appendChild(
-      deletableChipButton(p, "border-sky-200 text-sky-700 bg-sky-50", onClickFactory(p), "person", p, () => {
-        customPersons = customPersons.filter(v => v !== p);
-        if (selectedPerson === p) selectedPerson = null;
-        saveCustomChips();
-        renderPersonChips();
-        applyEditModeUI();
-      })
-    );
+    wrap.appendChild(deletableChipButton(p, "border-sky-200 text-sky-700 bg-sky-50", onClickFactory(p), "person", p, () => {
+      customPersons = customPersons.filter(v => v !== p);
+      if (selectedPerson === p) selectedPerson = null;
+      saveCustomChips(); renderPersonChips(); applyEditModeUI();
+    }));
   });
-
-  wrap.appendChild(
-    addChipButton(() => {
-      const text = prompt("輸入新的對象按鈕文字，例如：資訊室");
-      if (text && text.trim()) {
-        customPersons.push(text.trim());
-        saveCustomChips();
-        renderPersonChips();
-        applyEditModeUI();
-      }
-    })
-  );
+  wrap.appendChild(addChipButton(() => {
+    const text = prompt("輸入新的對象按鈕文字：");
+    if (text && text.trim()) { customPersons.push(text.trim()); saveCustomChips(); renderPersonChips(); applyEditModeUI(); }
+  }));
 }
 
 function renderDateChips() {
   const wrap = document.getElementById("dateChips");
   const customInput = document.getElementById("customDateInput");
-
   const defs = [
     { label: "今天", get: () => new Date() },
     { label: "明天", get: () => addDays(new Date(), 1) },
     { label: "下週一", get: () => nextMonday(new Date()) },
   ];
-
   defs.forEach(d => {
     const btn = chipButton(d.label, "border-teal-200 text-teal-700 bg-teal-50", () => {
-      selectedDueDate = d.get();
-      customInput.classList.add("hidden");
-      customInput.value = "";
-      refreshChipStates();
-      updateDateLabel();
+      selectedDueDate = d.get(); customInput.classList.add("hidden"); customInput.value = ""; refreshChipStates(); updateDateLabel();
     }, "date", d.label);
     wrap.insertBefore(btn, customInput);
   });
-
   const customBtn = chipButton("📅 自訂日期", "border-slate-300 text-slate-600 bg-slate-50", () => {
-    customInput.classList.toggle("hidden");
-    if (!customInput.classList.contains("hidden")) customInput.focus();
+    customInput.classList.toggle("hidden"); if (!customInput.classList.contains("hidden")) customInput.focus();
   }, "date", "custom");
   wrap.insertBefore(customBtn, customInput);
 
   customInput.addEventListener("change", () => {
-    if (customInput.value) {
-      selectedDueDate = new Date(customInput.value + "T00:00:00");
-      refreshChipStates("custom-active");
-      updateDateLabel();
-    }
+    if (customInput.value) { selectedDueDate = new Date(customInput.value + "T00:00:00"); refreshChipStates("custom-active"); updateDateLabel(); }
   });
 }
 
-function addDays(date, n) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
-}
-function nextMonday(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = (8 - day) % 7 || 7;
-  d.setDate(d.getDate() + diff);
-  return d;
-}
-function formatDateLabel(d) {
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-function updateDateLabel() {
-  const label = document.getElementById("selectedDateLabel");
-  label.textContent = selectedDueDate ? `→ ${formatDateLabel(selectedDueDate)}` : "";
-}
+function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
+function nextMonday(date) { const d = new Date(date); const diff = (8 - d.getDay()) % 7 || 7; d.setDate(d.getDate() + diff); return d; }
+function formatDateLabel(d) { return `${d.getMonth() + 1}/${d.getDate()}`; }
+function updateDateLabel() { document.getElementById("selectedDateLabel").textContent = selectedDueDate ? `→ ${formatDateLabel(selectedDueDate)}` : ""; }
 
 function refreshChipStates() {
-  document.querySelectorAll('[data-group="action"]').forEach(b => {
-    b.classList.toggle("chip-active", b.dataset.value === selectedAction);
-  });
-  document.querySelectorAll('[data-group="person"]').forEach(b => {
-    b.classList.toggle("chip-active", b.dataset.value === selectedPerson);
-  });
+  document.querySelectorAll('[data-group="project"]').forEach(b => b.classList.toggle("chip-active", b.dataset.value === selectedProject));
+  document.querySelectorAll('[data-group="action"]').forEach(b => b.classList.toggle("chip-active", b.dataset.value === selectedAction));
+  document.querySelectorAll('[data-group="person"]').forEach(b => b.classList.toggle("chip-active", b.dataset.value === selectedPerson));
 }
 
-/* ============================================================
- * 3. 組字邏輯：把選到的動詞／人物安插進 input
- * ==========================================================*/
 function rebuildInputPrefix() {
   const input = document.getElementById("taskInput");
   const current = input.value;
   const idx = current.indexOf("：");
   const remainder = idx >= 0 ? current.slice(idx + 1) : current;
-
   const parts = [];
   if (selectedAction) parts.push(selectedAction);
   if (selectedPerson) parts.push(selectedPerson);
   const prefix = parts.length ? parts.join(" ") + "：" : "";
-
   input.value = prefix + remainder;
   input.focus();
-  input.setSelectionRange(input.value.length, input.value.length);
 }
 
-/* ============================================================
- * 4. Google Identity Services 登入 / 登出
- * ==========================================================*/
 window.addEventListener("load", () => {
+  renderProjectChips();
   renderActionChips();
   renderPersonChips();
   renderDateChips();
@@ -379,28 +263,16 @@ window.addEventListener("load", () => {
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (resp) => {
-      if (resp.error) {
-        alert("登入失敗：" + resp.error);
-        return;
-      }
+      if (resp.error) return alert("登入失敗：" + resp.error);
       accessToken = resp.access_token;
       setLoggedInUI(true);
     },
   });
 
-  document.getElementById("loginBtn").addEventListener("click", () => {
-    tokenClient.requestAccessToken({ prompt: "consent" });
-  });
-
+  document.getElementById("loginBtn").addEventListener("click", () => tokenClient.requestAccessToken({ prompt: "consent" }));
   document.getElementById("logoutBtn").addEventListener("click", () => {
-    if (accessToken) {
-      google.accounts.oauth2.revoke(accessToken, () => {
-        accessToken = null;
-        setLoggedInUI(false);
-      });
-    }
+    if (accessToken) google.accounts.oauth2.revoke(accessToken, () => { accessToken = null; setLoggedInUI(false); });
   });
-
   document.getElementById("addTaskBtn").addEventListener("click", handleAddTask);
 });
 
@@ -411,51 +283,38 @@ function setLoggedInUI(loggedIn) {
   document.getElementById("notLoggedInHint").classList.toggle("hidden", loggedIn);
 }
 
-/* ============================================================
- * 5. Google Tasks API 呼叫 (僅新增)
- * ==========================================================*/
 async function apiFetch(url, options = {}) {
   const res = await fetch(url, {
     ...options,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", ...(options.headers || {}) },
   });
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error("Google Tasks API 錯誤:", errText);
-    throw new Error(errText);
-  }
-  if (res.status === 204) return null;
-  return res.json();
+  if (!res.ok) throw new Error(await res.text());
+  return res.status === 204 ? null : res.json();
 }
 
 async function handleAddTask() {
   const input = document.getElementById("taskInput");
-  const title = input.value.trim();
-  if (!title) {
-    alert("請輸入或組合任務內容");
-    return;
-  }
-  if (!accessToken) {
-    alert("請先登入 Google");
-    return;
+  const notesInput = document.getElementById("taskNotes");
+  let title = input.value.trim();
+  const notes = notesInput.value.trim();
+
+  if (!title) return alert("請輸入或組合任務標題");
+  if (!accessToken) return alert("請先登入 Google");
+
+  // 如果有選擇專案，把專案名稱加在標題最前面
+  if (selectedProject) {
+    title = `[${selectedProject}] ${title}`;
   }
 
-  const body = { title };
+  const body = { title, notes };
+  
   if (selectedDueDate) {
     const d = selectedDueDate;
-    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-      d.getDate()
-    ).padStart(2, "0")}T00:00:00.000Z`;
-    body.due = iso;
+    body.due = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T00:00:00.000Z`;
   }
 
   const btn = document.getElementById("addTaskBtn");
   btn.disabled = true;
-  const originalText = btn.innerHTML;
   btn.innerHTML = "⏳ 處理中...";
 
   try {
@@ -466,15 +325,17 @@ async function handleAddTask() {
     alert("新增任務失敗");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = originalText;
+    btn.innerHTML = "➕ 快速送出（Add Task）";
   }
 }
 
 function resetQuickAddForm() {
+  selectedProject = null;
   selectedAction = null;
   selectedPerson = null;
   selectedDueDate = null;
   document.getElementById("taskInput").value = "";
+  document.getElementById("taskNotes").value = "";
   document.getElementById("customDateInput").value = "";
   document.getElementById("customDateInput").classList.add("hidden");
   document.getElementById("selectedDateLabel").textContent = "";
