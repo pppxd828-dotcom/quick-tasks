@@ -420,7 +420,6 @@ async function saveTaskToSheets() {
   const newTags = document.getElementById("newTaskTags").value.trim();
   let newDeadline = document.getElementById("newTaskDeadline").value;
   if (newDeadline) newDeadline = newDeadline.replace(/-/g, '/'); // 轉換成 YYYY/MM/DD 格式
-  const now = new Date().toLocaleString('zh-TW');
   const details = document.getElementById("taskDetails").value;
   
   if (!title) return alert("任務摘要不能是空的喔！");
@@ -691,7 +690,7 @@ async function deleteTask(rowIndex, logEncoded) {
   if (!confirmDelete) return;
   
   // 刪除時不加說明，直接呼叫更新 API，狀態改為已作廢
-  await updateTaskDetailAPI(rowIndex, "已作廢", "使用者刪除了此案件", decodeURIComponent(logEncoded));
+  await updateSheetData(rowIndex, "已作廢", decodeURIComponent(logEncoded));
 }
 
 
