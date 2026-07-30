@@ -68,18 +68,16 @@
   </section>
 
   <!-- 案件資料表區域 -->
-  <section class="bg-white rounded-xl shadow-sm border border-slate-200 ">
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200">
+    
+    <!-- 頂部過濾器與按鈕區塊 -->
     <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-<div class="flex flex-wrap gap-2">
-<div class="relative" id="statusDropdown">
-          <!-- 觸發按鈕 -->
-          <button onclick="toggleDropdown('statusMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
-            <span id="statusBtnText">狀態 (全部)</span>
-            <span class="text-slate-400 text-xs">▼</span>
-          </button>
-          
-          <!-- 下拉選單面板 (預設隱藏) -->
-<div class="relative" id="statusDropdown">
+      
+      <!-- 💡 左側：篩選器群組 (透過 flex 和 gap-3 讓它們橫向、整齊排列) -->
+      <div class="flex flex-wrap items-center gap-3">
+        
+        <!-- 1. 狀態篩選 -->
+        <div class="relative" id="statusDropdown">
           <button onclick="toggleDropdown('statusMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
             <span id="statusBtnText">狀態 (全部)</span>
             <span class="text-slate-400 text-xs">▼</span>
@@ -90,7 +88,6 @@
               <button onclick="selectAllOptions('status', '狀態')" class="text-xs text-blue-600 hover:text-blue-800 font-bold">全選/清除</button>
             </div>
             <div class="max-h-48 overflow-y-auto p-1">
-              <!-- 狀態是固定的，直接寫在 HTML 裡 -->
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="待處理" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full text-xs font-bold">待處理</span></label>
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="進行中" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">進行中</span></label>
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="卡關" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-bold">卡關</span></label>
@@ -99,7 +96,8 @@
             </div>
           </div>
         </div>
-        <!-- 2. 類別篩選 (選項將由 JS 動態載入) -->
+
+        <!-- 2. 類別篩選 -->
         <div class="relative" id="categoryDropdown">
           <button onclick="toggleDropdown('categoryMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
             <span id="categoryBtnText">類別 (全部)</span>
@@ -115,6 +113,7 @@
             </div>
           </div>
         </div>
+
         <!-- 3. 廠商篩選 -->
         <div class="relative" id="vendorDropdown">
           <button onclick="toggleDropdown('vendorMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
@@ -127,7 +126,6 @@
               <button onclick="selectAllOptions('vendor', '廠商')" class="text-xs text-blue-600 hover:text-blue-800 font-bold">全選/清除</button>
             </div>
             <div class="max-h-48 overflow-y-auto p-1">
-              <!-- 廠商也是固定的，直接寫死 -->
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="DMS" class="filter-vendor-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('vendor', '廠商'); applyFilter()"><span class="text-sm font-medium text-slate-700">DMS</span></label>
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="三商" class="filter-vendor-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('vendor', '廠商'); applyFilter()"><span class="text-sm font-medium text-slate-700">三商</span></label>
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="迪堡多富" class="filter-vendor-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('vendor', '廠商'); applyFilter()"><span class="text-sm font-medium text-slate-700">迪堡多富</span></label>
@@ -136,7 +134,8 @@
             </div>
           </div>
         </div>
-        <!-- 4. 處理人篩選 (選項將由 JS 動態載入) -->
+
+        <!-- 4. 處理人篩選 -->
         <div class="relative" id="assigneeDropdown">
           <button onclick="toggleDropdown('assigneeMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
             <span id="assigneeBtnText">處理人 (全部)</span>
@@ -152,8 +151,12 @@
             </div>
           </div>
         </div>
-      </div>
+        
+      </div> <!-- /結束左側篩選器群組 -->
+
+      <!-- 右側：匯出按鈕 -->
       <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100">📥 匯出 Excel</button>
+      
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
