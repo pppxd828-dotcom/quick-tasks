@@ -71,13 +71,43 @@
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
     <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
 <div class="flex flex-wrap gap-2">
-        <select id="filterStatus" onchange="applyFilter()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700">
-          <option value="全部">全部狀態</option>
-          <option value="待處理">待處理</option>
-          <option value="進行中">進行中</option>
-          <option value="卡關">卡關 / 等回覆</option>
-          <option value="結案">結案</option>
-        </select>
+<div class="relative" id="statusDropdown">
+          <!-- 觸發按鈕 -->
+          <button onclick="toggleDropdown('statusMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
+            <span id="statusBtnText">狀態 (全部)</span>
+            <span class="text-slate-400 text-xs">▼</span>
+          </button>
+          
+          <!-- 下拉選單面板 (預設隱藏) -->
+          <div id="statusMenu" class="hidden absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1">
+            <div class="px-3 py-2 border-b border-slate-100 flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-500">選擇狀態</span>
+              <button onclick="selectAllStatus()" class="text-xs text-blue-600 hover:text-blue-800 font-bold">全選 / 清除</button>
+            </div>
+            <div class="max-h-48 overflow-y-auto p-1">
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
+                <input type="checkbox" value="待處理" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
+                <span class="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-bold">待處理</span>
+              </label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
+                <input type="checkbox" value="進行中" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
+                <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-xs font-bold">進行中</span>
+              </label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
+                <input type="checkbox" value="卡關" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
+                <span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-xs font-bold">卡關</span>
+              </label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
+                <input type="checkbox" value="等回覆" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
+                <span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-xs font-bold">等回覆</span>
+              </label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
+                <input type="checkbox" value="結案" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
+                <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-bold">結案</span>
+              </label>
+            </div>
+          </div>
+        </div>
         <select id="filterCategory" onchange="applyFilter()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700">
           <option value="全部">全部類別</option>
         </select>
@@ -765,11 +795,11 @@ async function updateSheetData(rowIndex, newStatus, currentLog) {
 // 🔍 核心功能：根據多重核取方塊過濾表格內容
 // 🔍 核心功能：根據下拉選單過濾表格內容
 function applyFilter() {
-  const filterStatus = document.getElementById('filterStatus').value;
+   const checkedStatuses = Array.from(document.querySelectorAll('.filter-status-cb:checked')).map(cb => cb.value);
   const filterCategory = document.getElementById('filterCategory').value;
   const filterVendor = document.getElementById('filterVendor').value;
   const filterAssignee = document.getElementById('filterAssignee').value;
-  
+ 
   const rows = document.querySelectorAll("#taskTableBody tr");
 
   rows.forEach(row => {
@@ -782,7 +812,7 @@ function applyFilter() {
     const assigneeText = row.querySelector("td:nth-child(5)").textContent; 
 
     // 判斷邏輯：如果是「全部」，代表該條件過關；否則文字必須包含選擇的字眼
-    const matchStatus = (filterStatus === "全部") || statusText.includes(filterStatus);
+    const matchStatus = checkedStatuses.some(status => statusText.includes(status));
     const matchCategory = (filterCategory === "全部") || (categoryText === filterCategory);
     const matchVendor = (filterVendor === "全部") || (vendorText === filterVendor);
     const matchAssignee = (filterAssignee === "全部") || (assigneeText === filterAssignee);
@@ -813,6 +843,45 @@ function filterByDashboard(type) {
     else row.style.display = "none";
   });
 }
+// 1. 打開或關閉下拉選單
+function toggleDropdown(menuId) {
+  document.getElementById(menuId).classList.toggle('hidden');
+}
+
+// 2. 更新按鈕上的「已選數量」文字
+function updateStatusBtn() {
+  const checkboxes = document.querySelectorAll('.filter-status-cb');
+  const checkedBoxes = document.querySelectorAll('.filter-status-cb:checked');
+  const btnText = document.getElementById('statusBtnText');
+  
+  if (checkedBoxes.length === checkboxes.length) {
+    btnText.textContent = "狀態 (全部)";
+  } else if (checkedBoxes.length === 0) {
+    btnText.textContent = "狀態 (未選)";
+  } else {
+    btnText.textContent = `狀態 (已選 ${checkedBoxes.length})`;
+  }
+}
+
+// 3. 全選/清除 按鈕功能
+function selectAllStatus() {
+  const checkboxes = document.querySelectorAll('.filter-status-cb');
+  // 檢查是否已經全選，如果是全選狀態就全部取消，反之則全選
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  
+  checkboxes.forEach(cb => cb.checked = !allChecked);
+  updateStatusBtn();
+  applyFilter();
+}
+
+// 4. (選用) 點擊網頁其他空白處，自動收起下拉選單
+document.addEventListener('click', function(event) {
+  const dropdown = document.getElementById('statusDropdown');
+  const menu = document.getElementById('statusMenu');
+  if (dropdown && !dropdown.contains(event.target)) {
+    menu.classList.add('hidden');
+  }
+});
 </script>
 </body>
 </html>
