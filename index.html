@@ -68,7 +68,7 @@
   </section>
 
   <!-- 案件資料表區域 -->
-  <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200 ">
     <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
 <div class="flex flex-wrap gap-2">
 <div class="relative" id="statusDropdown">
@@ -79,49 +79,79 @@
           </button>
           
           <!-- 下拉選單面板 (預設隱藏) -->
+<div class="relative" id="statusDropdown">
+          <button onclick="toggleDropdown('statusMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
+            <span id="statusBtnText">狀態 (全部)</span>
+            <span class="text-slate-400 text-xs">▼</span>
+          </button>
           <div id="statusMenu" class="hidden absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1">
             <div class="px-3 py-2 border-b border-slate-100 flex justify-between items-center">
               <span class="text-xs font-bold text-slate-500">選擇狀態</span>
-              <button onclick="selectAllStatus()" class="text-xs text-blue-600 hover:text-blue-800 font-bold">全選 / 清除</button>
+              <button onclick="selectAllOptions('status', '狀態')" class="text-xs text-blue-600 hover:text-blue-800 font-bold">全選/清除</button>
             </div>
             <div class="max-h-48 overflow-y-auto p-1">
-              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
-                <input type="checkbox" value="待處理" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
-                <span class="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-bold">待處理</span>
-              </label>
-              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
-                <input type="checkbox" value="進行中" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
-                <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-xs font-bold">進行中</span>
-              </label>
-              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
-                <input type="checkbox" value="卡關" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
-                <span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-xs font-bold">卡關</span>
-              </label>
-              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
-                <input type="checkbox" value="等回覆" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
-                <span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-xs font-bold">等回覆</span>
-              </label>
-              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
-                <input type="checkbox" value="結案" class="filter-status-cb w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer" checked onchange="updateStatusBtn(); applyFilter()">
-                <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-bold">結案</span>
-              </label>
+              <!-- 狀態是固定的，直接寫在 HTML 裡 -->
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="待處理" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full text-xs font-bold">待處理</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="進行中" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">進行中</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="卡關" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-bold">卡關</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="等回覆" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-bold">等回覆</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="結案" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold">結案</span></label>
             </div>
           </div>
         </div>
-        <select id="filterCategory" onchange="applyFilter()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700">
-          <option value="全部">全部類別</option>
-        </select>
-        <select id="filterVendor" onchange="applyFilter()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700">
-          <option value="全部">全部廠商</option>
-          <option value="DMS">DMS</option>
-          <option value="三商">三商</option>
-          <option value="迪堡多富">迪堡多富</option>
-          <option value="國眾">國眾</option>
-          <option value="無">無 / 內部</option>
-        </select>
-        <select id="filterAssignee" onchange="applyFilter()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700">
-          <option value="全部">全部處理人</option>
-        </select>
+        <!-- 2. 類別篩選 (選項將由 JS 動態載入) -->
+        <div class="relative" id="categoryDropdown">
+          <button onclick="toggleDropdown('categoryMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
+            <span id="categoryBtnText">類別 (全部)</span>
+            <span class="text-slate-400 text-xs">▼</span>
+          </button>
+          <div id="categoryMenu" class="hidden absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1">
+            <div class="px-3 py-2 border-b border-slate-100 flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-500">選擇類別</span>
+              <button onclick="selectAllOptions('category', '類別')" class="text-xs text-blue-600 hover:text-blue-800 font-bold">全選/清除</button>
+            </div>
+            <div id="categoryFilterList" class="max-h-48 overflow-y-auto p-1">
+              <div class="text-center text-xs text-slate-400 py-2">載入中...</div>
+            </div>
+          </div>
+        </div>
+        <!-- 3. 廠商篩選 -->
+        <div class="relative" id="vendorDropdown">
+          <button onclick="toggleDropdown('vendorMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
+            <span id="vendorBtnText">廠商 (全部)</span>
+            <span class="text-slate-400 text-xs">▼</span>
+          </button>
+          <div id="vendorMenu" class="hidden absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1">
+            <div class="px-3 py-2 border-b border-slate-100 flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-500">選擇廠商</span>
+              <button onclick="selectAllOptions('vendor', '廠商')" class="text-xs text-blue-600 hover:text-blue-800 font-bold">全選/清除</button>
+            </div>
+            <div class="max-h-48 overflow-y-auto p-1">
+              <!-- 廠商也是固定的，直接寫死 -->
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="DMS" class="filter-vendor-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('vendor', '廠商'); applyFilter()"><span class="text-sm font-medium text-slate-700">DMS</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="三商" class="filter-vendor-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('vendor', '廠商'); applyFilter()"><span class="text-sm font-medium text-slate-700">三商</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="迪堡多富" class="filter-vendor-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('vendor', '廠商'); applyFilter()"><span class="text-sm font-medium text-slate-700">迪堡多富</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="國眾" class="filter-vendor-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('vendor', '廠商'); applyFilter()"><span class="text-sm font-medium text-slate-700">國眾</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="無" class="filter-vendor-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('vendor', '廠商'); applyFilter()"><span class="text-sm font-medium text-slate-700">無 / 內部</span></label>
+            </div>
+          </div>
+        </div>
+        <!-- 4. 處理人篩選 (選項將由 JS 動態載入) -->
+        <div class="relative" id="assigneeDropdown">
+          <button onclick="toggleDropdown('assigneeMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
+            <span id="assigneeBtnText">處理人 (全部)</span>
+            <span class="text-slate-400 text-xs">▼</span>
+          </button>
+          <div id="assigneeMenu" class="hidden absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1">
+            <div class="px-3 py-2 border-b border-slate-100 flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-500">選擇處理人</span>
+              <button onclick="selectAllOptions('assignee', '處理人')" class="text-xs text-blue-600 hover:text-blue-800 font-bold">全選/清除</button>
+            </div>
+            <div id="assigneeFilterList" class="max-h-48 overflow-y-auto p-1">
+              <div class="text-center text-xs text-slate-400 py-2">載入中...</div>
+            </div>
+          </div>
+        </div>
       </div>
       <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100">📥 匯出 Excel</button>
     </div>
@@ -397,18 +427,26 @@ try {
     const filterCatSelect = document.getElementById("filterCategory");
     let catOptions = '<option value="全部">全部類別</option>'; // 篩選器用的預設
     let formCatOptions = '<option value="">請選擇...</option>'; // 表單用的預設
-    
+    let filterCatHtml = ''; // 準備塞給篩選器的 HTML
+ 
     if (catData.values) {
       catData.values.forEach(row => {
         if(row[0]) {
+          // 給新增與編輯的表單用 (維持 option)
           formCatOptions += `<option value="${row[0]}">${row[0]}</option>`;
-          catOptions += `<option value="${row[0]}">${row[0]}</option>`;
+          // 給新的多選篩選器用 (產生 checkbox)
+          filterCatHtml += `
+            <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer">
+              <input type="checkbox" value="${row[0]}" class="filter-category-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('category', '類別'); applyFilter()">
+              <span class="text-sm font-medium text-slate-700">${row[0]}</span>
+            </label>`;
         }
       });
     }
     catSelect.innerHTML = formCatOptions;
     detailCatSelect.innerHTML = formCatOptions;
-    filterCatSelect.innerHTML = catOptions; // 寫入篩選器
+    document.getElementById("categoryFilterList").innerHTML = filterCatHtml;
+    updateDropdownBtn('category', '類別'); // 更新按鈕文字
 
     // 3. 更新「聯絡人」選單
     const contactSelect = document.getElementById("contactSelect");
@@ -444,18 +482,24 @@ try {
     const filterAssigneeSelect = document.getElementById("filterAssignee");
     let assigneeOptions = '<option value="全部">全部處理人</option>';
     let formAssigneeOptions = '<option value="">請選擇...</option>';
+    let filterAssigneeHtml = '';
     
     if (assigneeData.values) {
       assigneeData.values.forEach(row => {
         if(row[0]) {
           formAssigneeOptions += `<option value="${row[0]}">${row[0]}</option>`;
-          assigneeOptions += `<option value="${row[0]}">${row[0]}</option>`;
+          filterAssigneeHtml += `
+            <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer">
+              <input type="checkbox" value="${row[0]}" class="filter-assignee-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('assignee', '處理人'); applyFilter()">
+              <span class="text-sm font-medium text-slate-700">${row[0]}</span>
+            </label>`;
         }
       });
     }
     assigneeSelect.innerHTML = formAssigneeOptions;
     detailAssigneeSelect.innerHTML = formAssigneeOptions;
-    filterAssigneeSelect.innerHTML = assigneeOptions;
+    document.getElementById("assigneeFilterList").innerHTML = filterAssigneeHtml;
+    updateDropdownBtn('assignee', '處理人'); // 更新按鈕文字
     
     console.log("✅ 系統設定載入成功！");
   } catch (error) {
@@ -843,45 +887,87 @@ function filterByDashboard(type) {
     else row.style.display = "none";
   });
 }
-// 1. 打開或關閉下拉選單
+
+// 1. 打開或關閉指定的下拉選單
 function toggleDropdown(menuId) {
+  // 先把其他所有選單關掉，再切換點擊的這個
+  const allMenus = ['statusMenu', 'categoryMenu', 'vendorMenu', 'assigneeMenu'];
+  allMenus.forEach(id => {
+    if (id !== menuId) document.getElementById(id).classList.add('hidden');
+  });
   document.getElementById(menuId).classList.toggle('hidden');
 }
 
-// 2. 更新按鈕上的「已選數量」文字
-function updateStatusBtn() {
-  const checkboxes = document.querySelectorAll('.filter-status-cb');
-  const checkedBoxes = document.querySelectorAll('.filter-status-cb:checked');
-  const btnText = document.getElementById('statusBtnText');
+// 2. 通用的：更新按鈕上的「已選數量」文字
+function updateDropdownBtn(type, labelName) {
+  const checkboxes = document.querySelectorAll(`.filter-${type}-cb`);
+  const checkedBoxes = document.querySelectorAll(`.filter-${type}-cb:checked`);
+  const btnText = document.getElementById(`${type}BtnText`);
   
   if (checkedBoxes.length === checkboxes.length) {
-    btnText.textContent = "狀態 (全部)";
+    btnText.textContent = `${labelName} (全部)`;
   } else if (checkedBoxes.length === 0) {
-    btnText.textContent = "狀態 (未選)";
+    btnText.textContent = `${labelName} (未選)`;
   } else {
-    btnText.textContent = `狀態 (已選 ${checkedBoxes.length})`;
+    btnText.textContent = `${labelName} (已選 ${checkedBoxes.length})`;
   }
 }
 
-// 3. 全選/清除 按鈕功能
-function selectAllStatus() {
-  const checkboxes = document.querySelectorAll('.filter-status-cb');
-  // 檢查是否已經全選，如果是全選狀態就全部取消，反之則全選
+// 3. 通用的：全選 / 清除功能
+function selectAllOptions(type, labelName) {
+  const checkboxes = document.querySelectorAll(`.filter-${type}-cb`);
   const allChecked = Array.from(checkboxes).every(cb => cb.checked);
   
   checkboxes.forEach(cb => cb.checked = !allChecked);
-  updateStatusBtn();
+  updateDropdownBtn(type, labelName);
   applyFilter();
 }
 
-// 4. (選用) 點擊網頁其他空白處，自動收起下拉選單
+// 4. 點擊網頁其他空白處，自動收起所有下拉選單
 document.addEventListener('click', function(event) {
-  const dropdown = document.getElementById('statusDropdown');
-  const menu = document.getElementById('statusMenu');
-  if (dropdown && !dropdown.contains(event.target)) {
-    menu.classList.add('hidden');
-  }
+  const dropdowns = ['status', 'category', 'vendor', 'assignee'];
+  dropdowns.forEach(type => {
+    const wrap = document.getElementById(`${type}Dropdown`);
+    const menu = document.getElementById(`${type}Menu`);
+    // 如果點擊的地方不在該選單範圍內，就把它隱藏
+    if (wrap && !wrap.contains(event.target)) {
+      menu.classList.add('hidden');
+    }
+  });
 });
+
+// 🔍 5. 更新為支援四組陣列的 applyFilter
+function applyFilter() {
+  // 抓取四大過濾器中「有被打勾」的值，存成陣列
+  const checkedStatuses = Array.from(document.querySelectorAll('.filter-status-cb:checked')).map(cb => cb.value);
+  const checkedCategories = Array.from(document.querySelectorAll('.filter-category-cb:checked')).map(cb => cb.value);
+  const checkedVendors = Array.from(document.querySelectorAll('.filter-vendor-cb:checked')).map(cb => cb.value);
+  const checkedAssignees = Array.from(document.querySelectorAll('.filter-assignee-cb:checked')).map(cb => cb.value);
+
+  const rows = document.querySelectorAll("#taskTableBody tr");
+
+  rows.forEach(row => {
+    if (row.innerText.includes("目前沒有任何案件")) return;
+
+    const statusText = row.querySelector("td:nth-child(1) span").textContent;
+    const categoryText = row.querySelector("td:nth-child(2)").textContent;
+    const vendorText = row.querySelector("td:nth-child(3)").textContent; 
+    const assigneeText = row.querySelector("td:nth-child(5)").textContent; 
+
+    // 比對文字是否存在於被勾選的陣列中
+    const matchStatus = checkedStatuses.some(status => statusText.includes(status));
+    const matchCategory = checkedCategories.includes(categoryText);
+    const matchVendor = checkedVendors.includes(vendorText);
+    const matchAssignee = checkedAssignees.includes(assigneeText);
+
+    // 四個條件都符合才顯示
+    if (matchStatus && matchCategory && matchVendor && matchAssignee) {
+      row.style.display = ""; 
+    } else {
+      row.style.display = "none"; 
+    }
+  });
+}
 </script>
 </body>
 </html>
