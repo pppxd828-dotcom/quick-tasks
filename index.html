@@ -34,10 +34,13 @@
 
 <main class="max-w-7xl mx-auto px-4 mt-6">
 
-  <!-- 💡 期限甘特圖(時間軸)：有填最後期限的案件會以圓點呈現在對應日期上 -->
+  <!-- 💡 期限甘特圖(時間軸)：有填最後期限的案件會以圓點呈現在對應日期上；預設收合，需要時再展開 -->
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-      <h2 class="text-sm font-bold text-slate-600 flex items-center gap-2">📅 期限時間軸</h2>
+      <button type="button" onclick="toggleGanttChart()" class="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-800 transition">
+        <span id="ganttToggleIcon" class="text-xs text-slate-400 inline-block transition-transform">▶</span>
+        <span>📅 期限時間軸</span>
+      </button>
       <div class="flex items-center gap-4 text-xs text-slate-400">
         <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>已逾期</span>
         <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>今天到期</span>
@@ -45,9 +48,11 @@
         <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>已結案</span>
       </div>
     </div>
-    <div id="ganttWrapper" class="overflow-x-auto pb-2">
-      <div id="ganttChart" class="relative" style="height:150px;">
-        <div class="flex items-center justify-center h-full text-xs text-slate-300">載入中...</div>
+    <div id="ganttCollapseWrapper" class="hidden">
+      <div id="ganttWrapper" class="overflow-x-auto pb-2">
+        <div id="ganttChart" class="relative" style="height:150px;">
+          <div class="flex items-center justify-center h-full text-xs text-slate-300">載入中...</div>
+        </div>
       </div>
     </div>
   </section>
@@ -229,9 +234,19 @@
       </div>
       <div class="col-span-2 sm:col-span-1">
         <label class="block text-xs font-bold text-slate-500 mb-1">聯絡人 (來自 Google Sheets)</label>
-        <select id="contactSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
-          <option value="">載入中...</option>
-        </select>
+        <div class="relative combo-field">
+          <input type="hidden" id="contactSelect" value="">
+          <button type="button" onclick="toggleCombo('contactSelect', this)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-left flex justify-between items-center bg-white hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition">
+            <span id="contactSelect_label" class="text-slate-400 truncate">請選擇...</span>
+            <span class="text-slate-400 text-xs shrink-0 ml-2">▼</span>
+          </button>
+          <div id="contactSelect_panel" class="combo-panel hidden fixed z-50 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
+            <div class="p-2 border-b border-slate-100">
+              <input type="text" placeholder="搜尋聯絡人..." class="combo-search w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500" oninput="renderComboList('contactSelect', this.value)">
+            </div>
+            <div id="contactSelect_list" class="max-h-56 overflow-y-auto p-1"></div>
+          </div>
+        </div>
       </div>
      <div class="col-span-2 sm:col-span-1">
         <label class="block text-xs font-bold text-slate-500 mb-1">處理人 (來自 Google Sheets)</label>
@@ -310,7 +325,19 @@
         </div>
         <div class="col-span-2 sm:col-span-1">
           <label class="block text-xs font-bold text-slate-600 mb-1">聯絡人</label>
-          <select id="detailContact" class="w-full border border-slate-200 rounded text-sm px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"></select>
+          <div class="relative combo-field">
+            <input type="hidden" id="detailContact" value="">
+            <button type="button" onclick="toggleCombo('detailContact', this)" class="w-full border border-slate-200 rounded text-sm px-2 py-1 text-left flex justify-between items-center bg-white hover:bg-slate-50 focus:ring-1 focus:ring-blue-500 outline-none transition">
+              <span id="detailContact_label" class="text-slate-400 truncate">請選擇...</span>
+              <span class="text-slate-400 text-xs shrink-0 ml-2">▼</span>
+            </button>
+            <div id="detailContact_panel" class="combo-panel hidden fixed z-50 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
+              <div class="p-2 border-b border-slate-100">
+                <input type="text" placeholder="搜尋聯絡人..." class="combo-search w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500" oninput="renderComboList('detailContact', this.value)">
+              </div>
+              <div id="detailContact_list" class="max-h-56 overflow-y-auto p-1"></div>
+            </div>
+          </div>
         </div>
        <div class="col-span-2 sm:col-span-1">
           <label class="block text-xs font-bold text-slate-600 mb-1">處理人</label>
@@ -341,9 +368,10 @@
 
       <!-- 歷史歷程 LOG -->
       <div>
-        <label class="block text-sm font-bold text-slate-700 mb-2">處理歷程 (History Log)</label>
-        <!-- 使用 pre-wrap 讓紀錄可以自動換行並保留格式 -->
-        <div id="detailLog" class="bg-slate-50 border border-slate-100 rounded-lg p-4 text-xs text-slate-600 whitespace-pre-wrap h-48 overflow-y-auto font-mono leading-relaxed">
+        <label class="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-1">
+          🔄 處理軌跡（<span id="detailLogCount">0</span> 筆，新到舊）
+        </label>
+        <div id="detailLogList" class="bg-white border border-slate-100 rounded-lg p-4 h-56 overflow-y-auto">
           <!-- 歷程紀錄會顯示在這裡 -->
         </div>
       </div>
@@ -466,20 +494,22 @@ async function loadSettingsFromSheets() {
     document.getElementById("categoryFilterList").innerHTML = filterCatHtml;
     updateDropdownBtn('category', '類別'); 
 
-    // 3. 更新「聯絡人」選單
-    const contactSelect = document.getElementById("contactSelect");
-    const detailContactSelect = document.getElementById("detailContact");
-    let contactOptions = '<option value="">請選擇...</option>';
+    // 3. 更新「聯絡人」選單（改用自訂下拉選單元件，避免清單被瀏覽器貼在畫面底部）
+    let contactOptions = [];
     if (contactData.values) {
       contactData.values.forEach(row => {
-        if(row[0]) {
-          const ext = row[1] ? ` (分機: ${row[1]})` : '';
-          contactOptions += `<option value="${row[0]}">${row[0]}${ext}</option>`;
+        if (row[0]) {
+          contactOptions.push({
+            value: row[0],
+            primary: row[0],
+            secondary: row[1] || "",
+            tag: row[2] || ""
+          });
         }
       });
     }
-    contactSelect.innerHTML = contactOptions;
-    detailContactSelect.innerHTML = contactOptions; 
+    setComboOptions("contactSelect", contactOptions);
+    setComboOptions("detailContact", contactOptions);
 
     // 4. 更新「任務來源」選單
     const sourceSelect = document.getElementById("taskSource");
@@ -543,10 +573,14 @@ async function saveTaskToSheets() {
   if (!title) return alert("任務摘要不能是空的喔！");
 
   const now = new Date().toLocaleString('zh-TW');
+  // 💡 建立初始的處理歷程紀錄，讓「處理軌跡」一開始就有「案件建立」這一筆
+  const createdAt = new Date();
+  const createdTimeStr = `${createdAt.getFullYear()}/${(createdAt.getMonth()+1).toString().padStart(2,'0')}/${createdAt.getDate().toString().padStart(2,'0')} ${createdAt.getHours().toString().padStart(2,'0')}:${createdAt.getMinutes().toString().padStart(2,'0')}`;
+  const initialLog = `[${createdTimeStr}] 案件建立（狀態：待處理）`;
   
   // 2. 依照試算表的 A~I 欄位順序排好陣列
   const rowData = [
-    "待處理", category, contact, source, title, details, newDeadline, now, now, "", newTags, vendor,
+    "待處理", category, contact, source, title, details, newDeadline, now, now, initialLog, newTags, vendor,
     assignee // 💡 塞入第13格 (M欄)
   ];
 
@@ -569,7 +603,7 @@ if (result.updates) {
     // 💡 徹底清空所有新增案件 Modal 的欄位，恢復預設值
     document.getElementById("categorySelect").value = "";
     document.getElementById("vendorSelect").value = "無"; // 廠商預設為「無」
-    document.getElementById("contactSelect").value = "";
+    setComboValue("contactSelect", "");
     document.getElementById("taskSource").value = ""; 
     document.getElementById("newTaskAssignee").value = ""; // 處理人
     document.getElementById("newTaskDeadline").value = "";
@@ -826,14 +860,250 @@ function renderGanttChart(items) {
   chart.innerHTML = axisHtml + dotsHtml;
 }
 
+// 💡 期限時間軸的收合/展開（預設收合，需要時再展開，並記住使用者的選擇）
+function toggleGanttChart() {
+  const wrapper = document.getElementById("ganttCollapseWrapper");
+  const icon = document.getElementById("ganttToggleIcon");
+  if (!wrapper) return;
+  const willExpand = wrapper.classList.contains("hidden");
+  wrapper.classList.toggle("hidden");
+  if (icon) icon.style.transform = willExpand ? "rotate(90deg)" : "rotate(0deg)";
+  try { localStorage.setItem("ganttCollapsed", willExpand ? "0" : "1"); } catch (e) {}
+}
+
+(function initGanttCollapseState() {
+  let collapsed = "1"; // 預設收合
+  try { collapsed = localStorage.getItem("ganttCollapsed") || "1"; } catch (e) {}
+  if (collapsed === "0") {
+    const wrapper = document.getElementById("ganttCollapseWrapper");
+    const icon = document.getElementById("ganttToggleIcon");
+    if (wrapper) wrapper.classList.remove("hidden");
+    if (icon) icon.style.transform = "rotate(90deg)";
+  }
+})();
+
+// 💡 通用的 HTML 逸出，避免使用者輸入的文字破壞版面或造成 XSS
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+
+// ========================================================================
+// 💡 通用「自訂下拉選單」元件：取代原生 <select>，避免選單被瀏覽器貼在
+//    視窗最底部(甚至跟 Windows 工作列擠在一起)，改用頁面內的樣式卡片呈現
+// ========================================================================
+const comboStore = {};
+
+// 設定某個欄位的選項清單。options: [{ value, primary, secondary, tag }]
+function setComboOptions(fieldId, options) {
+  comboStore[fieldId] = options || [];
+  renderComboList(fieldId, "");
+  // 若目前已有值，重新對齊顯示文字(例如選項資料是之後才載入的情況)
+  const current = document.getElementById(fieldId);
+  if (current && current.value) setComboValue(fieldId, current.value);
+}
+
+function renderComboList(fieldId, query) {
+  const list = document.getElementById(fieldId + "_list");
+  if (!list) return;
+  const q = (query || "").trim().toLowerCase();
+  const all = comboStore[fieldId] || [];
+  const rows = all
+    .map((o, idx) => ({ o, idx }))
+    .filter(({ o }) => !q || `${o.primary} ${o.secondary || ""} ${o.tag || ""}`.toLowerCase().includes(q));
+
+  if (rows.length === 0) {
+    list.innerHTML = '<div class="px-3 py-4 text-center text-xs text-slate-400">查無符合的資料</div>';
+    return;
+  }
+
+  list.innerHTML = rows.map(({ o, idx }) => `
+    <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-blue-50 transition" onclick="selectCombo('${fieldId}', ${idx})">
+      <div class="min-w-0">
+        <div class="font-bold text-slate-700 text-sm truncate">${escapeHtml(o.primary)}</div>
+        ${o.secondary ? `<div class="text-xs text-slate-400 truncate">${escapeHtml(o.secondary)}</div>` : ''}
+      </div>
+      ${o.tag ? `<span class="shrink-0 text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">${escapeHtml(o.tag)}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+function updateComboLabel(fieldId, o) {
+  const labelEl = document.getElementById(fieldId + "_label");
+  if (!labelEl) return;
+  if (o) {
+    labelEl.textContent = o.primary;
+    labelEl.classList.remove("text-slate-400");
+    labelEl.classList.add("text-slate-700");
+  } else {
+    labelEl.textContent = "請選擇...";
+    labelEl.classList.add("text-slate-400");
+    labelEl.classList.remove("text-slate-700");
+  }
+}
+
+function selectCombo(fieldId, idx) {
+  const o = (comboStore[fieldId] || [])[idx];
+  if (!o) return;
+  const input = document.getElementById(fieldId);
+  if (input) input.value = o.value;
+  updateComboLabel(fieldId, o);
+  closeAllCombos();
+}
+
+// 讓程式可以像操作 <select> 一樣，用 .value 設定目前選取的值(例如打開編輯 Modal 時)
+function setComboValue(fieldId, value) {
+  const input = document.getElementById(fieldId);
+  if (input) input.value = value || "";
+  const found = (comboStore[fieldId] || []).find(item => item.value === value);
+  updateComboLabel(fieldId, found || (value ? { primary: value } : null));
+}
+
+function toggleCombo(fieldId, btn) {
+  const panel = document.getElementById(fieldId + "_panel");
+  if (!panel) return;
+  const willOpen = panel.classList.contains("hidden");
+  closeAllCombos();
+  if (!willOpen) return;
+
+  renderComboList(fieldId, "");
+  const rect = btn.getBoundingClientRect();
+  panel.classList.remove("hidden");
+  panel.style.left = Math.max(8, rect.left) + "px";
+  panel.style.width = Math.max(rect.width, 260) + "px";
+
+  // 動態判斷上下空間，空間不夠時自動往上展開，不會被畫面邊緣(或工作列)擋住
+  const panelHeight = panel.offsetHeight || 280;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  if (spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow) {
+    panel.style.top = Math.max(8, rect.top - panelHeight - 6) + "px";
+  } else {
+    panel.style.top = (rect.bottom + 6) + "px";
+  }
+
+  const searchInput = panel.querySelector(".combo-search");
+  if (searchInput) { searchInput.value = ""; searchInput.focus(); }
+}
+
+function closeAllCombos() {
+  document.querySelectorAll(".combo-panel").forEach(p => p.classList.add("hidden"));
+}
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".combo-field")) closeAllCombos();
+});
+window.addEventListener("resize", closeAllCombos);
+document.addEventListener("scroll", () => closeAllCombos(), true);
+
+// ========================================================================
+// 💡 處理軌跡 (History Log) 美化渲染
+// ========================================================================
+
+// 幫某個狀態文字配色 + icon，讓時間軸的圓點與標籤顏色一致
+function logStatusColor(statusText) {
+  const s = statusText || "";
+  if (s.includes("結案")) return { dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-600", icon: "✅" };
+  if (s.includes("作廢")) return { dot: "bg-slate-400", badge: "bg-slate-100 text-slate-500", icon: "🗑️" };
+  if (s.includes("待處理")) return { dot: "bg-rose-500", badge: "bg-rose-50 text-rose-600", icon: "⏳" };
+  if (s) return { dot: "bg-amber-500", badge: "bg-amber-50 text-amber-600", icon: "🔧" };
+  return { dot: "bg-slate-300", badge: "", icon: "" };
+}
+
+// 把 Google Sheets 存的原始 LOG 字串，拆解成一筆一筆的紀錄物件
+function parseHistoryLog(rawLog) {
+  if (!rawLog) return [];
+  const lines = rawLog.split('\n').map(l => l.trim()).filter(Boolean);
+  const headerRe = /^\[(.+?)\]\s*(.*)$/;
+  const entries = [];
+  let current = null;
+
+  lines.forEach(line => {
+    const m = line.match(headerRe);
+    if (m) {
+      if (current) entries.push(current);
+      current = { time: m[1], headline: m[2], notes: [] };
+    } else if (current) {
+      current.notes.push(line.replace(/^[└─\-]\s*/, '').replace(/^說明[:：]\s*/, ''));
+    }
+  });
+  if (current) entries.push(current);
+
+  const knownStatuses = ["結案", "已作廢", "待處理", "進行中", "等回覆", "卡關"];
+  entries.forEach(e => {
+    let badge = "";
+    let m2 = e.headline.match(/→\s*([^\s。，,]+)/);
+    if (m2) badge = m2[1];
+    if (!badge) {
+      m2 = e.headline.match(/狀態[:：]\s*([^\s。，,)）]+)/);
+      if (m2) badge = m2[1];
+    }
+    if (!badge) {
+      m2 = e.headline.match(/變更為[:：]\s*([^\s。，,]+)/);
+      if (m2) badge = m2[1];
+    }
+    if (!badge) {
+      const found = knownStatuses.find(s => e.headline.includes(s));
+      if (found) badge = found;
+    }
+    e.badge = badge;
+  });
+
+  return entries.reverse(); // 新到舊
+}
+
+// 把處理歷程渲染成漂亮的時間軸（圓點 + 時間 + 說明 + 狀態標籤）
+function renderHistoryLog(rawLog) {
+  const container = document.getElementById("detailLogList");
+  const countEl = document.getElementById("detailLogCount");
+  if (!container) return;
+
+  const entries = parseHistoryLog(rawLog);
+  if (countEl) countEl.textContent = entries.length;
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="text-center text-xs text-slate-400 py-8">目前尚無處理歷程。</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map((entry, idx) => {
+    const isLast = idx === entries.length - 1;
+    const colors = logStatusColor(entry.badge);
+    const noteHtml = entry.notes.length
+      ? `<div class="text-xs text-slate-500 mt-1 leading-relaxed">${entry.notes.map(n => escapeHtml(n)).join('<br>')}</div>`
+      : '';
+    const badgeHtml = entry.badge
+      ? `<span class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${colors.badge} whitespace-nowrap">${colors.icon ? colors.icon + ' ' : ''}${escapeHtml(entry.badge)}</span>`
+      : '';
+
+    return `
+      <div class="relative pl-6 ${isLast ? '' : 'pb-4'}">
+        ${isLast ? '' : `<div class="absolute left-[5px] top-3 bottom-0 w-px bg-slate-200"></div>`}
+        <div class="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full ${colors.dot} ring-4 ring-white shadow-sm"></div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-slate-400">${escapeHtml(entry.time)}</div>
+            <div class="text-sm text-slate-700 mt-0.5 leading-relaxed">${escapeHtml(entry.headline)}</div>
+            ${noteHtml}
+          </div>
+          ${badgeHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 // 儲存目前正在編輯的列數與歷史紀錄
 let currentEditingRow = null;
 let currentEditingLog = "";
+let currentEditingOriginalStatus = ""; // 💡 記住打開 Modal 當下的狀態，用來組出「A → B」的變更紀錄
 
 // 🟢 點擊「✏️ 處理」按鈕時：打開 Modal 並把資料塞進去
 function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, contactEnc, sourceEnc, deadlineEnc, assigneeEnc) {
   currentEditingRow = rowIndex;
   currentEditingLog = decodeURIComponent(logEnc);
+  currentEditingOriginalStatus = status;
   
   document.getElementById("detailStatus").value = status;
   document.getElementById("detailNote").value = ""; 
@@ -842,7 +1112,7 @@ function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, co
   // 💡 寫入新欄位
   document.getElementById("detailCategory").value = decodeURIComponent(catEnc);
   document.getElementById("detailVendor").value = decodeURIComponent(vendorEnc);
-  document.getElementById("detailContact").value = decodeURIComponent(contactEnc);
+  setComboValue("detailContact", decodeURIComponent(contactEnc));
   document.getElementById("detailSource").value = decodeURIComponent(sourceEnc);
  document.getElementById("detailAssignee").value = decodeURIComponent(assigneeEnc);
   
@@ -850,7 +1120,7 @@ function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, co
   const dl = decodeURIComponent(deadlineEnc);
   document.getElementById("detailDeadline").value = dl ? dl.replace(/\//g, '-') : "";
   
-  document.getElementById("detailLog").textContent = currentEditingLog || "目前尚無處理歷程。";
+  renderHistoryLog(currentEditingLog);
   document.getElementById("taskDetailModal").classList.remove("hidden");
 }
 
@@ -885,7 +1155,7 @@ document.getElementById("saveDetailBtn").addEventListener("click", async () => {
   btn.disabled = true;
 
   // 呼叫更新 API (將所有參數傳入)
-  await updateTaskDetailAPI(currentEditingRow, newStatus, note, currentEditingLog, tags, newCat, newVendor, newContact, newSource, newDeadline, newAssignee);
+  await updateTaskDetailAPI(currentEditingRow, newStatus, currentEditingOriginalStatus, note, currentEditingLog, tags, newCat, newVendor, newContact, newSource, newDeadline, newAssignee);
   
   btn.textContent = originalText;
   btn.disabled = false;
@@ -893,13 +1163,16 @@ document.getElementById("saveDetailBtn").addEventListener("click", async () => {
 });
 
 // ⚙️ 核心 API：將狀態、說明、新 LOG 寫回 Google Sheets
-async function updateTaskDetailAPI(rowIndex, newStatus, note, currentLog, tags, category, vendor, contact, source, deadline, assignee) {
+async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, currentLog, tags, category, vendor, contact, source, deadline, assignee) {
   try {
     const now = new Date();
     const timeString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
     
-    let newLogEntry = `[${timeString}] 狀態：${newStatus}`;
-    if (note) newLogEntry += `\n └ 說明：${note}`; 
+    // 💡 組出「狀態變更：A → B」的敘述，沒改變狀態則寫「狀態確認：A → A」，方便統一解析、上色
+    const fromStatus = oldStatus || newStatus;
+    const changeLabel = (fromStatus !== newStatus) ? "狀態變更" : "狀態確認";
+    let newLogEntry = `[${timeString}] ${changeLabel}：${fromStatus} → ${newStatus}`;
+    if (note) newLogEntry += `。備註：${note}`;
     const updatedLog = currentLog ? `${currentLog}\n\n${newLogEntry}` : newLogEntry;
 
     const body = {
@@ -953,7 +1226,7 @@ async function updateSheetData(rowIndex, newStatus, currentLog) {
     const timeString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
     
     // 2. 組合處理歷程紀錄
-    const newLogEntry = `[${timeString}] 變更為：${newStatus}`;
+    const newLogEntry = `[${timeString}] 案件刪除（狀態變更：已作廢）`;
     const updatedLog = currentLog ? `${currentLog}\n${newLogEntry}` : newLogEntry;
 
     // 3. 打包要更新的資料 (使用 batchUpdate 可以一次更新多個不連續的欄位)
