@@ -85,6 +85,15 @@
           <span class="text-sm font-bold text-slate-600 bg-slate-200 px-2 py-1 rounded">類別篩選</span>
           <span class="text-sm text-slate-400">載入中...</span>
         </div>
+        <!-- 廠商篩選 -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-sm font-bold text-slate-600 bg-slate-200 px-2 py-1 rounded">廠商篩選</span>
+          <label class="cursor-pointer flex items-center gap-1 text-sm text-slate-700 font-medium"><input type="checkbox" value="DMS" class="filter-vendor w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" checked onchange="applyFilter()"> DMS</label>
+          <label class="cursor-pointer flex items-center gap-1 text-sm text-slate-700 font-medium"><input type="checkbox" value="三商" class="filter-vendor w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" checked onchange="applyFilter()"> 三商</label>
+          <label class="cursor-pointer flex items-center gap-1 text-sm text-slate-700 font-medium"><input type="checkbox" value="迪堡多富" class="filter-vendor w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" checked onchange="applyFilter()"> 迪堡多富</label>
+          <label class="cursor-pointer flex items-center gap-1 text-sm text-slate-700 font-medium"><input type="checkbox" value="國眾" class="filter-vendor w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" checked onchange="applyFilter()"> 國眾</label>
+          <label class="cursor-pointer flex items-center gap-1 text-sm text-slate-700 font-medium"><input type="checkbox" value="無" class="filter-vendor w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" checked onchange="applyFilter()"> 無/內部</label>
+        </div>
       </div>
       <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100">📥 匯出 Excel</button>
     </div>
@@ -94,6 +103,7 @@
           <tr class="bg-white text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200">
             <th class="px-6 py-4 font-bold">狀態</th>
             <th class="px-6 py-4 font-bold">專案類別</th>
+            <th class="px-6 py-4 font-bold text-indigo-600">負責廠商</th>
             <th class="px-6 py-4 font-bold">聯絡人</th>
             <th class="px-6 py-4 font-bold">任務來源</th>
             <th class="px-6 py-4 font-semibold text-left">任務摘要</th>
@@ -125,6 +135,16 @@
         <label class="block text-xs font-bold text-slate-500 mb-1">專案類別 (來自 Google Sheets)</label>
         <select id="categorySelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
           <option value="">載入中...</option>
+        </select>
+      </div>
+      <div class="col-span-2 sm:col-span-1">
+        <label class="block text-xs font-bold text-slate-500 mb-1">負責廠商</label>
+        <select id="vendorSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="無">無 / 內部處理</option>
+          <option value="DMS">DMS</option>
+          <option value="三商">三商</option>
+          <option value="迪堡多富">迪堡多富</option>
+          <option value="國眾">國眾</option>
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1">
@@ -347,6 +367,7 @@ async function saveTaskToSheets() {
   if (!accessToken) return alert("請先登入！");
 
   const category = document.getElementById("categorySelect").value;
+  const vendor = document.getElementById("vendorSelect").value; // 💡 抓取廠商
   const contact = document.getElementById("contactSelect").value;
   const source = document.getElementById("taskSource").value; // 1. 抓取任務來源
   const title = document.getElementById("taskTitle").value;
@@ -367,11 +388,14 @@ async function saveTaskToSheets() {
     "",         // G (死線)
     now,        // H (建立時間)
     now         // I (最後更新)
+    "",         // J (歷程)
+    "",         // K (標籤)
+    vendor      // L (廠商)
   ];
 
   try {
-    // 3. 注意這裡的範圍從 A:H 改成了 A:I
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:I:append?valueInputOption=USER_ENTERED`, {
+    // 3. 網址最後的範圍從 A:I 改成 A:L
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:L:append?valueInputOption=USER_ENTERED`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -400,8 +424,8 @@ async function saveTaskToSheets() {
 // 核心功能：從 Google Sheets 讀取案件總表並顯示在畫面上
 async function loadTasksFromSheets() {
   try {
-    // 💡 抓取範圍延伸到 K 欄 (標籤)
-    const range = encodeURIComponent("案件總表!A2:K");
+    // 💡 抓取範圍延伸到 L 欄 (標籤)
+    const range = encodeURIComponent("案件總表!A2:L");
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store" 
@@ -442,6 +466,7 @@ async function loadTasksFromSheets() {
       const lastUpdate = row[8] || row[7] || ""; 
       const historyLog = row[9] || ""; 
       const tags = row[10] || ""; // 💡 抓取 K 欄的標籤
+      const vendor = row[11] || "無"; // 💡 抓取 L 欄，舊案件如果沒有填就顯示「無」
       
       // 💡 統計邏輯升級：只有「死線小於等於今天」且「未結案」才算今日急件！
       if (status.includes("待處理")) todoCount++;
@@ -468,6 +493,7 @@ async function loadTasksFromSheets() {
         <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-0" data-status="${status}" data-urgent="${(deadline !== "" && deadline <= todayStr && !status.includes("結案")) ? 'yes' : 'no'}">
           <td class="px-6 py-3"><span class="px-2 py-1 rounded-md text-xs font-bold ${statusColor}">${status}</span></td>
           <td class="px-6 py-3 font-medium text-slate-700">${category}</td>
+          <td class="px-6 py-3 font-bold text-indigo-600">${vendor}</td>
           <td class="px-6 py-3 text-slate-600">${contact}</td>
           <td class="px-6 py-3 text-slate-400 text-xs">${source}</td>
           <td class="px-6 py-3 font-bold text-slate-800">${title}</td>
@@ -649,27 +675,30 @@ async function updateSheetData(rowIndex, newStatus, currentLog) {
 }
 
 // 🔍 核心功能：根據多重核取方塊過濾表格內容
+// 🔍 核心功能：根據多重核取方塊過濾表格內容
 function applyFilter() {
-  // 1. 取得目前所有「被打勾」的狀態與類別的值
+  // 1. 取得目前所有「被打勾」的值
   const checkedStatuses = Array.from(document.querySelectorAll('.filter-status:checked')).map(cb => cb.value);
   const checkedCategories = Array.from(document.querySelectorAll('.filter-category:checked')).map(cb => cb.value);
+  const checkedVendors = Array.from(document.querySelectorAll('.filter-vendor:checked')).map(cb => cb.value); // 💡 新增廠商
   
-  // 2. 抓出表格裡面所有的資料行
   const rows = document.querySelectorAll("#taskTableBody tr");
 
   rows.forEach(row => {
     if (row.innerText.includes("目前沒有任何案件")) return;
 
-    // 抓取這一行的狀態 (第1欄) 與 類別 (第2欄)
+    // 2. 抓取這一行的狀態 (第1欄)、類別 (第2欄)、廠商 (第3欄)
     const statusText = row.querySelector("td:nth-child(1) span").textContent;
     const categoryText = row.querySelector("td:nth-child(2)").textContent;
+    const vendorText = row.querySelector("td:nth-child(3)").textContent; // 💡 抓取廠商文字
 
-    // 邏輯判斷：只要該行的狀態和類別，包含在我們打勾的陣列裡面，就代表符合！
+    // 3. 邏輯判斷：比對打勾的陣列
     const matchStatus = checkedStatuses.some(status => statusText.includes(status));
     const matchCategory = checkedCategories.includes(categoryText);
+    const matchVendor = checkedVendors.includes(vendorText); // 💡 比對廠商
 
-    // 必須「狀態」和「類別」都有打勾對應到的，才顯示出來
-    if (matchStatus && matchCategory) {
+    // 4. 三者都符合才顯示
+    if (matchStatus && matchCategory && matchVendor) {
       row.style.display = ""; 
     } else {
       row.style.display = "none"; 
