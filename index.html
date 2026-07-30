@@ -648,19 +648,21 @@ async function loadTasksFromSheets() {
       
       tbody.innerHTML += `
         <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-0" data-status="${status}" data-urgent="${(deadline !== "" && deadline <= todayStr && !status.includes("結案")) ? 'yes' : 'no'}">
-          <td class="px-6 py-3"><span class="px-2 py-1 rounded-md text-xs font-bold ${statusColor}">${status}</span></td>
-          <td class="px-6 py-3 font-medium text-slate-700">${category}</td>
-          <td class="px-6 py-3 font-bold text-indigo-600">${vendor}</td>
-          <td class="px-6 py-3 text-slate-600">${contact}</td>
-          <td class="px-6 py-3 font-bold text-blue-600">${assignee}</td>
-          <td class="px-6 py-3 text-slate-400 text-xs">${source}</td>
+          <td class="px-6 py-3 whitespace-nowrap"><span class="px-2 py-1 rounded-md text-xs font-bold ${statusColor}">${status}</span></td>
+          <td class="px-6 py-3 font-medium text-slate-700 whitespace-nowrap">${category}</td>
+          <td class="px-6 py-3 font-bold text-indigo-600 whitespace-nowrap">${vendor}</td>
+          <td class="px-6 py-3 text-slate-600 whitespace-nowrap">${contact}</td>
+          <td class="px-6 py-3 font-bold text-blue-600 whitespace-nowrap">${assignee}</td>
+          <td class="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">${source}</td>
+          <!-- 💡 任務摘要不加 nowrap，讓過長的敘述可以自然換行，版面才不會無限長 -->
           <td class="px-6 py-3 font-bold text-slate-800">${title}</td>
-          <td class="px-6 py-3">${tagsHtml}</td> 
-          <td class="px-6 py-3 text-rose-500 font-medium text-sm">${deadline || "-"}</td>
-          <td class="px-6 py-3 text-xs text-slate-400">${lastUpdate}</td>
-          <td class="px-6 py-3 text-center space-x-2">
-            <button onclick="openTaskDetail(${rowIndex}, '${status}', '${encLog}', '${encTags}', '${encCat}', '${encVendor}', '${encContact}', '${encSource}', '${encDeadline}', '${encAssignee}')" class="...">✏️ 處理</button>
-            <button onclick="deleteTask(${rowIndex}, '${logEncoded}')" class="...">🗑️ 刪除</button>
+          <!-- 💡 標籤加個最大寬度，避免標籤太多把版面撐爆 -->
+          <td class="px-6 py-3 max-w-[150px]">${tagsHtml}</td> 
+          <td class="px-6 py-3 text-rose-500 font-medium text-sm whitespace-nowrap">${deadline || "-"}</td>
+          <td class="px-6 py-3 text-xs text-slate-400 whitespace-nowrap">${lastUpdate}</td>
+          <td class="px-6 py-3 text-center space-x-2 whitespace-nowrap">
+            <button onclick="openTaskDetail(${rowIndex}, '${status}', '${encLog}', '${encTags}', '${encCat}', '${encVendor}', '${encContact}', '${encSource}', '${encDeadline}', '${encAssignee}')" class="text-blue-500 hover:text-blue-700 text-sm font-bold transition">✏️ 處理</button>
+            <button onclick="deleteTask(${rowIndex}, '${logEncoded}')" class="text-rose-500 hover:text-rose-700 text-sm font-bold transition">🗑️ 刪除</button>
           </td>
         </tr>
       `;
