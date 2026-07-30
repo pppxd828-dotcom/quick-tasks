@@ -723,25 +723,24 @@ document.getElementById("saveDetailBtn").addEventListener("click", async () => {
   const note = document.getElementById("detailNote").value.trim();
   const tags = document.getElementById("detailTags").value.trim();
   
-  // 💡 抓取編輯後的新資料
   const newCat = document.getElementById("detailCategory").value;
   const newVendor = document.getElementById("detailVendor").value;
   const newContact = document.getElementById("detailContact").value;
   const newSource = document.getElementById("detailSource").value;
-  const newAssignee = document.getElementById("detailAssignee").value;
   let newDeadline = document.getElementById("detailDeadline").value;
   if (newDeadline) newDeadline = newDeadline.replace(/-/g, '/');
   
-  // 讓按鈕顯示「儲存中」防止重複點擊
+  // 💡 確保處理人也有被抓取到
+  const newAssignee = document.getElementById("detailAssignee").value; 
+  
   const btn = document.getElementById("saveDetailBtn");
   const originalText = btn.textContent;
   btn.textContent = "儲存中...";
   btn.disabled = true;
 
-  // 呼叫更新 API
+  // 呼叫更新 API (將所有參數傳入)
   await updateTaskDetailAPI(currentEditingRow, newStatus, note, currentEditingLog, tags, newCat, newVendor, newContact, newSource, newDeadline, newAssignee);
   
-  // 恢復按鈕狀態並關閉 Modal
   btn.textContent = originalText;
   btn.disabled = false;
   closeTaskDetailModal();
@@ -757,15 +756,14 @@ async function updateTaskDetailAPI(rowIndex, newStatus, note, currentLog, tags, 
     if (note) newLogEntry += `\n └ 說明：${note}`; 
     const updatedLog = currentLog ? `${currentLog}\n\n${newLogEntry}` : newLogEntry;
 
-    // 💡 打包資料：運用 batchUpdate 一次寫入多個不連續範圍，包含最新的 M 欄！
     const body = {
       valueInputOption: "USER_ENTERED",
       data: [
         { range: `案件總表!A${rowIndex}`, values: [[newStatus]] },
-        { range: `案件總表!B${rowIndex}:D${rowIndex}`, values: [[category, contact, source]] }, // B, C, D 欄
-        { range: `案件總表!G${rowIndex}`, values: [[deadline]] }, // G 欄
-        { range: `案件總表!I${rowIndex}:L${rowIndex}`, values: [[timeString, updatedLog, tags, vendor]] }, // I, J, K, L 欄
-        { range: `案件總表!M${rowIndex}`, values: [[assignee]] } // 💡 更新 M 欄 (處理人)
+        { range: `案件總表!B${rowIndex}:D${rowIndex}`, values: [[category, contact, source]] }, 
+        { range: `案件總表!G${rowIndex}`, values: [[deadline]] }, 
+        { range: `案件總表!I${rowIndex}:L${rowIndex}`, values: [[timeString, updatedLog, tags, vendor]] }, 
+        { range: `案件總表!M${rowIndex}`, values: [[assignee]] } 
       ]
     };
 
