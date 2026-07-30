@@ -33,7 +33,25 @@
 </header>
 
 <main class="max-w-7xl mx-auto px-4 mt-6">
-  
+
+  <!-- 💡 期限甘特圖(時間軸)：有填最後期限的案件會以圓點呈現在對應日期上 -->
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <h2 class="text-sm font-bold text-slate-600 flex items-center gap-2">📅 期限時間軸</h2>
+      <div class="flex items-center gap-4 text-xs text-slate-400">
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>已逾期</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>今天到期</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>尚未到期</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>已結案</span>
+      </div>
+    </div>
+    <div id="ganttWrapper" class="overflow-x-auto pb-2">
+      <div id="ganttChart" class="relative" style="height:150px;">
+        <div class="flex items-center justify-center h-full text-xs text-slate-300">載入中...</div>
+      </div>
+    </div>
+  </section>
+
   <!-- 四大狀態卡片 (儀表板) -->
   <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <div onclick="filterByDashboard('急件')" class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
@@ -586,6 +604,7 @@ async function loadTasksFromSheets() {
 
     if (!data.values || data.values.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400">目前沒有任何案件！</td></tr>';
+      renderGanttChart([]);
       return;
     }
 
@@ -594,6 +613,7 @@ async function loadTasksFromSheets() {
     const rows = validRows.reverse(); 
     
     let urgentCount = 0, todoCount = 0, doingCount = 0, waitingCount = 0;
+    const ganttItems = []; // 💡 收集有填「最後期限」的案件，畫在上方時間軸
     
     // 💡 取得今天的日期 (格式：YYYY/MM/DD) 以判斷今日急件
     const today = new Date();
@@ -622,6 +642,7 @@ async function loadTasksFromSheets() {
       if (status.includes("進行中")) doingCount++;
       if (status.includes("卡關") || status.includes("等回覆")) waitingCount++;
       if (deadline !== "" && deadline <= todayStr && !status.includes("結案")) urgentCount++; 
+      if (deadline !== "") ganttItems.push({ title, deadline, status });
 
       let statusColor = "bg-slate-100 text-slate-600";
       if (status.includes("待處理")) statusColor = "bg-amber-100 text-amber-700";
@@ -674,10 +695,135 @@ async function loadTasksFromSheets() {
     if (document.getElementById("countDoing")) document.getElementById("countDoing").textContent = doingCount;
     if (document.getElementById("countWaiting")) document.getElementById("countWaiting").textContent = waitingCount;
 
+    renderGanttChart(ganttItems);
+
     if (typeof applyFilter === "function") applyFilter();
   } catch (error) {
     console.error("載入失敗:", error);
   }
+}
+
+// 💡 畫出最上方的「期限時間軸」：把有填最後期限的案件，以圓點畫在對應日期上
+function renderGanttChart(items) {
+  const chart = document.getElementById("ganttChart");
+  if (!chart) return;
+
+  if (!items || items.length === 0) {
+    chart.style.height = "60px";
+    chart.style.width = "100%";
+    chart.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-slate-300">目前沒有設定「最後期限」的案件</div>';
+    return;
+  }
+
+  // 將 "YYYY/MM/DD" 轉成 Date 物件（避免用 new Date(string) 造成時區誤差）
+  const parseDate = (s) => {
+    const [y, m, d] = s.split('/').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
+  const pad2 = (n) => n.toString().padStart(2, '0');
+  const toKey = (d) => `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}`;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = toKey(today);
+
+  const dates = items.map(i => parseDate(i.deadline)).filter(d => !isNaN(d));
+  if (dates.length === 0) {
+    chart.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-slate-300">期限日期格式異常</div>';
+    return;
+  }
+
+  let minDate = new Date(Math.min(today, ...dates));
+  let maxDate = new Date(Math.max(today, ...dates));
+
+  // 前後各留 2 天緩衝，且至少涵蓋 14 天，畫面比較好看、不會擠成一團
+  minDate.setDate(minDate.getDate() - 2);
+  maxDate.setDate(maxDate.getDate() + 2);
+  const minSpanDays = 14;
+  const currentSpan = Math.round((maxDate - minDate) / 86400000);
+  if (currentSpan < minSpanDays) {
+    maxDate.setDate(maxDate.getDate() + (minSpanDays - currentSpan));
+  }
+
+  const totalDays = Math.round((maxDate - minDate) / 86400000);
+  const dayWidth = 44; // 每一天的寬度(px)
+  const chartWidth = totalDays * dayWidth;
+  const AXIS_BOTTOM = 22; // 軸線距離底部的高度，留給日期刻度文字
+
+  // 依「日期」分組，計算同一天內堆疊了幾個點(避免重疊)
+  const laneMap = {};
+  const sortedItems = [...items].sort((a, b) => parseDate(a.deadline) - parseDate(b.deadline));
+
+  let dotsHtml = "";
+  let maxLane = 0;
+
+  sortedItems.forEach(item => {
+    const d = parseDate(item.deadline);
+    if (isNaN(d)) return;
+    const dayOffset = Math.round((d - minDate) / 86400000);
+    const x = dayOffset * dayWidth + dayWidth / 2;
+
+    const lane = laneMap[item.deadline] || 0;
+    laneMap[item.deadline] = lane + 1;
+    maxLane = Math.max(maxLane, lane);
+    const bottom = AXIS_BOTTOM + 14 + lane * 24;
+
+    let colorClass = "bg-blue-500";
+    let ringClass = "";
+    if (item.status.includes("結案")) {
+      colorClass = "bg-emerald-500";
+    } else if (item.deadline < todayStr) {
+      colorClass = "bg-rose-500";
+      ringClass = "ring-4 ring-rose-100";
+    } else if (item.deadline === todayStr) {
+      colorClass = "bg-amber-500";
+      ringClass = "ring-4 ring-amber-100";
+    }
+
+    const safeTitle = String(item.title || "(無摘要)")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+    dotsHtml += `
+      <div class="absolute group" style="left:${x}px; bottom:${bottom}px; transform: translateX(-50%);">
+        <div class="w-3.5 h-3.5 rounded-full ${colorClass} ${ringClass} border-2 border-white shadow cursor-default hover:scale-125 transition"></div>
+        <div class="hidden group-hover:block absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-30 shadow-lg pointer-events-none">
+          <div class="font-bold">${safeTitle}</div>
+          <div class="text-slate-300 mt-0.5">${item.deadline}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  // 畫軸線與日期刻度：天數多的話拉大標籤間距，避免擠在一起
+  const labelStep = totalDays > 60 ? 7 : (totalDays > 24 ? 3 : 1);
+  let axisHtml = `<div class="absolute" style="left:0; right:0; bottom:${AXIS_BOTTOM}px; width:${chartWidth}px; border-top:1px solid #e2e8f0;"></div>`;
+
+  for (let i = 0; i <= totalDays; i += labelStep) {
+    const d = new Date(minDate);
+    d.setDate(d.getDate() + i);
+    const x = i * dayWidth;
+    const isToday = toKey(d) === todayStr;
+    const label = isToday ? "今天" : `${d.getMonth() + 1}/${d.getDate()}`;
+    axisHtml += `
+      <div class="absolute" style="left:${x}px; bottom:${AXIS_BOTTOM - 6}px; transform: translateX(-50%);">
+        <div class="w-px h-1.5 bg-slate-300 mx-auto"></div>
+        <div class="text-[10px] mt-0.5 whitespace-nowrap ${isToday ? 'text-amber-600 font-bold' : 'text-slate-400'}">${label}</div>
+      </div>
+    `;
+  }
+
+  // 「今天」的垂直參考虛線
+  const todayOffset = Math.round((today - minDate) / 86400000);
+  if (todayOffset >= 0 && todayOffset <= totalDays) {
+    const todayX = todayOffset * dayWidth + dayWidth / 2;
+    axisHtml += `<div class="absolute border-l-2 border-dashed border-amber-300" style="left:${todayX}px; bottom:${AXIS_BOTTOM}px; height:calc(100% - ${AXIS_BOTTOM}px);"></div>`;
+  }
+
+  const chartHeight = Math.max(150, AXIS_BOTTOM + 40 + (maxLane + 1) * 24);
+  chart.style.height = chartHeight + "px";
+  chart.style.width = chartWidth + "px";
+  chart.style.minWidth = "100%";
+  chart.innerHTML = axisHtml + dotsHtml;
 }
 
 // 儲存目前正在編輯的列數與歷史紀錄
