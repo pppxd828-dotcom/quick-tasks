@@ -398,9 +398,9 @@ const SPREADSHEET_ID = "1Q7ncYV9-a_Vl54spHHH96x_FunVlf15QNLIbARJahq4";
 let accessToken = null;
 let tokenClient = null;
 
-// 全域狀態變數
+// 💡 全域狀態變數：預設依「最後期限」排序
 let allTasksData = []; 
-let currentSortCol = null; 
+let currentSortCol = 'deadline'; 
 let currentSortAsc = true; 
 let currentTagFilter = ""; 
 
@@ -625,12 +625,34 @@ async function loadTasksFromSheets() {
     const validRows = rowsWithIndex.filter(item => item.rowData.length > 0 && item.rowData[0] !== "");
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // 基準為今天的 00:00:00
     const todayStr = `${today.getFullYear()}/${(today.getMonth()+1).toString().padStart(2,'0')}/${today.getDate().toString().padStart(2,'0')}`;
 
-    allTasksData = validRows.reverse().map(item => {
+    // 💡 計算本週的起訖時間 (週一 到 週日)
+    const currentDay = today.getDay(); // 0是週日，1是週一
+    const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - distanceToMonday);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    allTasksData = validRows.map(item => { 
       const row = item.rowData;
       const status = row[0] || "未定";
       const deadline = row[6] || "";
+      
+      // 💡 判斷是否為本週期限 (而且尚未結案/作廢)
+      let isThisWeek = false;
+      if (deadline !== "" && !status.includes("結案") && !status.includes("作廢")) {
+        const [y, m, d] = deadline.split('/').map(Number);
+        const dlDate = new Date(y, m-1, d);
+        if (dlDate >= startOfWeek && dlDate <= endOfWeek) {
+          isThisWeek = true;
+        }
+      }
+
       return {
         rowIndex: item.rowIndex,
         status: status,
@@ -645,9 +667,29 @@ async function loadTasksFromSheets() {
         vendor: row[11] || "無",
         assignee: row[12] || "",
         isUrgent: (deadline !== "" && deadline <= todayStr && !status.includes("結案")),
-        isVoid: status === "已作廢"
+        isVoid: status === "已作廢",
+        isThisWeek: isThisWeek // 💡 存入本週標記
       };
     }).filter(task => !task.isVoid); 
+
+    // 💡 預設：依照「最後期限」近到遠排序 (空白放最後)
+    allTasksData.sort((a, b) => {
+      let valA = a.deadline || "";
+      let valB = b.deadline || "";
+      if (valA === "") return 1;  
+      if (valB === "") return -1; 
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+    
+    currentSortCol = 'deadline';
+    currentSortAsc = true;
+    
+    // 更新標題箭頭 UI
+    document.querySelectorAll('th span[id^="sort-"]').forEach(span => span.textContent = "");
+    const sortIcon = document.getElementById('sort-deadline');
+    if (sortIcon) sortIcon.textContent = " ▲";
 
     let urgentCount = 0, todoCount = 0, doingCount = 0, waitingCount = 0;
     const ganttItems = [];
@@ -705,8 +747,11 @@ function renderTable() {
     const encDeadline = encodeURIComponent(task.deadline);
     const encAssignee = encodeURIComponent(task.assignee);
     
+    // 💡 判斷底色：如果是本週到期的未結案案件，套用淺藍色 (bg-sky-50)
+    const rowBgClass = task.isThisWeek ? "bg-sky-50 hover:bg-sky-100" : "hover:bg-slate-50";
+
     tbody.innerHTML += `
-      <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-0 table-row-item" 
+      <tr class="${rowBgClass} transition border-b border-slate-100 last:border-0 table-row-item" 
           data-status="${task.status}" data-urgent="${task.isUrgent ? 'yes' : 'no'}" 
           data-category="${task.category}" data-vendor="${task.vendor}" 
           data-assignee="${task.assignee}" data-tags="${task.tags}">
