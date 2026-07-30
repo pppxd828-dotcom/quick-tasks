@@ -551,19 +551,25 @@ async function saveTaskToSheets() {
 
     const result = await response.json();
     
-    if (result.updates) {
-      alert("✅ 案件儲存成功！");
-      document.getElementById("newTaskTags").value = "";
-      document.getElementById("newTaskDeadline").value = "";
-      document.getElementById("taskSource").value = ""; // 清空新增的欄位
-      document.getElementById("taskTitle").value = "";
-      document.getElementById("taskDetails").value = "";
-      modal.classList.add("hidden");
-
-      loadTasksFromSheets(); // 儲存成功後自動重新整理表格！
-    } else {
-      console.error("儲存失敗:", result);
-    }
+if (result.updates) {
+  alert("✅ 案件儲存成功！");
+      
+    // 💡 徹底清空所有新增案件 Modal 的欄位，恢復預設值
+    document.getElementById("categorySelect").value = "";
+    document.getElementById("vendorSelect").value = "無"; // 廠商預設為「無」
+    document.getElementById("contactSelect").value = "";
+    document.getElementById("taskSource").value = ""; 
+    document.getElementById("newTaskAssignee").value = ""; // 處理人
+    document.getElementById("newTaskDeadline").value = "";
+    document.getElementById("newTaskTags").value = "";
+    document.getElementById("taskTitle").value = "";
+    document.getElementById("taskDetails").value = "";
+      
+    // 關閉 Modal 並重新載入表格
+    modal.classList.add("hidden");
+    loadTasksFromSheets(); 
+  } else {
+    console.error("儲存失敗:", result);
   } catch (error) {
     console.error("發生錯誤:", error);
   }
