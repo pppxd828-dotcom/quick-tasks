@@ -748,7 +748,6 @@ document.getElementById("saveDetailBtn").addEventListener("click", async () => {
 });
 
 // ⚙️ 核心 API：將狀態、說明、新 LOG 寫回 Google Sheets
-// 💡 注意括號裡增加了參數
 async function updateTaskDetailAPI(rowIndex, newStatus, note, currentLog, tags, category, vendor, contact, source, deadline, assignee) {
   try {
     const now = new Date();
@@ -758,21 +757,24 @@ async function updateTaskDetailAPI(rowIndex, newStatus, note, currentLog, tags, 
     if (note) newLogEntry += `\n └ 說明：${note}`; 
     const updatedLog = currentLog ? `${currentLog}\n\n${newLogEntry}` : newLogEntry;
 
-    // 💡 打包資料：運用 batchUpdate 一次寫入多個不連續範圍！
+    // 💡 打包資料：運用 batchUpdate 一次寫入多個不連續範圍，包含最新的 M 欄！
     const body = {
       valueInputOption: "USER_ENTERED",
       data: [
         { range: `案件總表!A${rowIndex}`, values: [[newStatus]] },
-        { range: `案件總表!B${rowIndex}:D${rowIndex}`, values: [[category, contact, source]] },
-        { range: `案件總表!G${rowIndex}`, values: [[deadline]] },
-        { range: `案件總表!I${rowIndex}:L${rowIndex}`, values: [[timeString, updatedLog, tags, vendor]] },
-        { range: `案件總表!M${rowIndex}`, values: [[assignee]] } // 💡 更新 M 欄
+        { range: `案件總表!B${rowIndex}:D${rowIndex}`, values: [[category, contact, source]] }, // B, C, D 欄
+        { range: `案件總表!G${rowIndex}`, values: [[deadline]] }, // G 欄
+        { range: `案件總表!I${rowIndex}:L${rowIndex}`, values: [[timeString, updatedLog, tags, vendor]] }, // I, J, K, L 欄
+        { range: `案件總表!M${rowIndex}`, values: [[assignee]] } // 💡 更新 M 欄 (處理人)
       ]
     };
 
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`, {
       method: "POST",
-      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      headers: { 
+        "Authorization": `Bearer ${accessToken}`, 
+        "Content-Type": "application/json" 
+      },
       body: JSON.stringify(body)
     });
 
