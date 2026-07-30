@@ -162,17 +162,18 @@
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="bg-white text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200">
-            <th class="px-6 py-4 font-bold">狀態</th>
-            <th class="px-6 py-4 font-bold">專案類別</th>
-            <th class="px-6 py-4 font-bold text-indigo-600">負責廠商</th>
-            <th class="px-6 py-4 font-bold">聯絡人</th>
-            <th class="px-6 py-4 font-bold text-blue-600">處理人</th> 
-            <th class="px-6 py-4 font-bold">任務來源</th>
-            <th class="px-6 py-4 font-semibold text-left">任務摘要</th>
-            <th class="px-6 py-4 font-semibold text-left">標籤</th>
-            <th class="px-6 py-4 font-bold">最後期限</th>
-            <th class="px-6 py-4 font-bold">最後更新</th>
-            <th class="px-6 py-4 font-semibold text-center">操作</th>
+            <th class="px-6 py-4 font-bold whitespace-nowrap">狀態</th>
+            <th class="px-6 py-4 font-bold whitespace-nowrap">專案類別</th>
+            <th class="px-6 py-4 font-bold text-indigo-600 whitespace-nowrap">負責廠商</th>
+            <th class="px-6 py-4 font-bold whitespace-nowrap">聯絡人</th>
+            <th class="px-6 py-4 font-bold text-blue-600 whitespace-nowrap">處理人</th>
+            <th class="px-6 py-4 font-bold whitespace-nowrap">任務來源</th>
+            <!-- 💡 任務摘要保留彈性，並設定最小寬度避免被擠太扁 -->
+            <th class="px-6 py-4 font-semibold text-left min-w-[200px]">任務摘要</th>
+            <th class="px-6 py-4 font-semibold text-left whitespace-nowrap">標籤</th>
+            <th class="px-6 py-4 font-bold whitespace-nowrap">最後期限</th>
+            <th class="px-6 py-4 font-bold whitespace-nowrap">最後更新</th>
+            <th class="px-6 py-4 font-semibold text-center whitespace-nowrap">操作</th>
           </tr>
         </thead>
         <tbody id="taskTableBody" class="text-sm divide-y divide-slate-100">
