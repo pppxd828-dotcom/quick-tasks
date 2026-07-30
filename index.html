@@ -410,9 +410,10 @@ function setLoggedInUI(loggedIn) {
 }
 
 // 核心功能：從 Google Sheets 抓取自訂選項
+// 核心功能：從 Google Sheets 抓取自訂選項
 async function loadSettingsFromSheets() {
-try {
-    // 💡 1. 增加抓取 I 欄 (處理人清單)
+  try {
+    // 1. 抓取類別、聯絡人、任務來源、處理人
     const [catRes, contactRes, sourceRes, assigneeRes] = await Promise.all([
       fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!A2:A`, { headers: { Authorization: `Bearer ${accessToken}` } }),
       fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!C2:E`, { headers: { Authorization: `Bearer ${accessToken}` } }),
@@ -425,20 +426,16 @@ try {
     const sourceData = await sourceRes.json();
     const assigneeData = await assigneeRes.json();
 
-    // 💡 2. 更新「專案類別」選單 (包含篩選器)
+    // 2. 更新「專案類別」選單
     const catSelect = document.getElementById("categorySelect");
     const detailCatSelect = document.getElementById("detailCategory");
-    const filterCatSelect = document.getElementById("filterCategory");
-    let catOptions = '<option value="全部">全部類別</option>'; // 篩選器用的預設
-    let formCatOptions = '<option value="">請選擇...</option>'; // 表單用的預設
-    let filterCatHtml = ''; // 準備塞給篩選器的 HTML
- 
+    let formCatOptions = '<option value="">請選擇...</option>'; 
+    let filterCatHtml = ''; 
+    
     if (catData.values) {
       catData.values.forEach(row => {
         if(row[0]) {
-          // 給新增與編輯的表單用 (維持 option)
           formCatOptions += `<option value="${row[0]}">${row[0]}</option>`;
-          // 給新的多選篩選器用 (產生 checkbox)
           filterCatHtml += `
             <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer">
               <input type="checkbox" value="${row[0]}" class="filter-category-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('category', '類別'); applyFilter()">
@@ -450,7 +447,7 @@ try {
     catSelect.innerHTML = formCatOptions;
     detailCatSelect.innerHTML = formCatOptions;
     document.getElementById("categoryFilterList").innerHTML = filterCatHtml;
-    updateDropdownBtn('category', '類別'); // 更新按鈕文字
+    updateDropdownBtn('category', '類別'); 
 
     // 3. 更新「聯絡人」選單
     const contactSelect = document.getElementById("contactSelect");
@@ -465,26 +462,23 @@ try {
       });
     }
     contactSelect.innerHTML = contactOptions;
-    detailContactSelect.innerHTML = contactOptions; // 💡 同時更新給處理 Modal
+    detailContactSelect.innerHTML = contactOptions; 
 
-    // 4. 更新「任務來源」選單 (新加入的邏輯)
+    // 4. 更新「任務來源」選單
     const sourceSelect = document.getElementById("taskSource");
-    const detailSourceSelect = document.getElementById("detailSource"); // 💡 新增
+    const detailSourceSelect = document.getElementById("detailSource"); 
     let sourceOptions = '<option value="">請選擇...</option>';
-    
     if (sourceData.values) {
       sourceData.values.forEach(row => {
         if(row[0]) sourceOptions += `<option value="${row[0]}">${row[0]}</option>`;
       });
     }
     sourceSelect.innerHTML = sourceOptions;
-    detailSourceSelect.innerHTML = sourceOptions; // 💡 同時更新給處理 Modal
-    
-    // 💡 5. 更新「處理人」選單
+    detailSourceSelect.innerHTML = sourceOptions; 
+
+    // 5. 更新「處理人」選單
     const assigneeSelect = document.getElementById("newTaskAssignee");
     const detailAssigneeSelect = document.getElementById("detailAssignee");
-    const filterAssigneeSelect = document.getElementById("filterAssignee");
-    let assigneeOptions = '<option value="全部">全部處理人</option>';
     let formAssigneeOptions = '<option value="">請選擇...</option>';
     let filterAssigneeHtml = '';
     
@@ -503,9 +497,10 @@ try {
     assigneeSelect.innerHTML = formAssigneeOptions;
     detailAssigneeSelect.innerHTML = formAssigneeOptions;
     document.getElementById("assigneeFilterList").innerHTML = filterAssigneeHtml;
-    updateDropdownBtn('assignee', '處理人'); // 更新按鈕文字
-    
+    updateDropdownBtn('assignee', '處理人'); 
+
     console.log("✅ 系統設定載入成功！");
+    
   } catch (error) {
     console.error("載入設定失敗:", error);
     alert("讀取試算表失敗，請確定你有建立『系統設定』分頁，並且欄位名稱正確。");
