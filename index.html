@@ -372,9 +372,16 @@
         <input type="text" id="detailTags" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 placeholder-slate-400" placeholder="例如：VIP, 需要報價, 跨部門">
       </div>
       
-      <div>
-        <label class="block text-sm font-bold text-slate-700 mb-2">新增執行說明 (選填)</label>
-        <textarea id="detailNote" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 placeholder-slate-400" placeholder="請描述目前的進度、遇到的問題，或與客戶確認的結果..."></textarea>
+      <!-- 💡 執行說明與子任務區域 -->
+      <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+        <label class="block text-sm font-bold text-blue-800 mb-2">💬 新增執行說明 (選填)</label>
+        <textarea id="detailNote" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 placeholder-slate-400 mb-3" placeholder="請描述目前的進度、遇到的問題，或與客戶確認的結果..."></textarea>
+        
+        <div class="flex items-center gap-3">
+          <label class="block text-xs font-bold text-slate-600 whitespace-nowrap">📅 備註專屬期限</label>
+          <input type="date" id="detailNoteDeadline" class="w-full max-w-[160px] border border-slate-200 rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 text-slate-700">
+          <span class="text-[11px] text-blue-500 font-medium">有填寫將自動建立為 Google Task 子任務</span>
+        </div>
       </div>
 
       <hr class="border-slate-100">
@@ -398,7 +405,6 @@
 <script>
 /* === Google API 憑證 === */
 const CLIENT_ID = "370645265767-phukpstpp7prf0ioh2tt6khc6dchk015.apps.googleusercontent.com";
-// 擴充權限：已同時包含 Google Tasks 與 Sheets
 const SCOPES = "https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/spreadsheets"; 
 const SPREADSHEET_ID = "1Q7ncYV9-a_Vl54spHHH96x_FunVlf15QNLIbARJahq4";
 
@@ -415,8 +421,8 @@ let currentTagFilter = "";
 let currentEditingRow = null;
 let currentEditingLog = "";
 let currentEditingOriginalStatus = ""; 
-let currentEditingTitle = "";   // 💡 記憶當下編輯的任務標題
-let currentEditingTaskId = "";  // 💡 記憶當下編輯的 Google Task ID
+let currentEditingTitle = "";   
+let currentEditingTaskId = "";  
 
 const modal = document.getElementById("taskModal");
 document.getElementById("openModalBtn").addEventListener("click", () => modal.classList.remove("hidden"));
@@ -469,25 +475,22 @@ function setLoggedInUI(loggedIn) {
 
 // 💡 核心 API：與 Google Tasks 同步 (建立 / 更新狀態 / 更新期限)
 async function syncGoogleTask(taskId, title, notes, deadline, status) {
-  if (!accessToken) return taskId; // 防呆
+  if (!accessToken) return taskId;
 
-  // 轉換期限為 Google Tasks 要求的 RFC3339 格式 (YYYY-MM-DDT00:00:00.000Z)
   let dueStr = null;
   if (deadline) {
     const [y, m, d] = deadline.split('/');
     dueStr = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString();
   }
 
-  // 根據我們的狀態，轉換成 Google Task 的完成狀態
   const taskStatus = (status.includes("結案") || status.includes("作廢")) ? "completed" : "needsAction";
 
   try {
     if (taskId) {
-      // ✅ 任務已存在：使用 PATCH 更新狀態與期限
       const body = { status: taskStatus };
       if (title) body.title = title;
       body.notes = notes || "";
-      body.due = dueStr || null; // 支援清除日期
+      body.due = dueStr || null; 
 
       await fetch(`https://tasks.googleapis.com/tasks/v1/lists/@default/tasks/${taskId}`, {
         method: "PATCH",
@@ -497,7 +500,6 @@ async function syncGoogleTask(taskId, title, notes, deadline, status) {
       return taskId;
 
     } else {
-      // ✅ 任務不存在：如果已經結案/作廢就不建立了；否則呼叫 POST 建立
       if (taskStatus === "completed") return "";
 
       const body = {
@@ -513,7 +515,7 @@ async function syncGoogleTask(taskId, title, notes, deadline, status) {
         body: JSON.stringify(body)
       });
       const data = await res.json();
-      return data.id || ""; // 回傳 Google 自動生成的 Task ID
+      return data.id || ""; 
     }
   } catch (err) {
     console.error("同步至 Google Tasks 發生錯誤:", err);
@@ -521,7 +523,37 @@ async function syncGoogleTask(taskId, title, notes, deadline, status) {
   }
 }
 
-// 核心功能：從 Google Sheets 抓取自訂選項
+// 💡 核心 API：建立 Google Tasks 子任務
+async function createGoogleSubtask(parentId, note, deadline) {
+  if (!accessToken || !parentId) return;
+  
+  let dueStr = null;
+  if (deadline) {
+    const [y, m, d] = deadline.split('/');
+    dueStr = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString();
+  }
+
+  const shortTitle = note.length > 20 ? note.substring(0, 20) + "..." : note;
+
+  const body = {
+    title: `[追蹤] ${shortTitle}`,
+    notes: note,
+    due: dueStr,
+    status: "needsAction"
+  };
+
+  try {
+    await fetch(`https://tasks.googleapis.com/tasks/v1/lists/@default/tasks?parent=${parentId}`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    console.log("✅ 子任務建立成功！");
+  } catch (err) {
+    console.error("建立子任務失敗:", err);
+  }
+}
+
 async function loadSettingsFromSheets() {
   try {
     const [catRes, contactRes, sourceRes, assigneeRes] = await Promise.all([
@@ -608,7 +640,6 @@ async function loadSettingsFromSheets() {
   }
 }
 
-// 儲存案件 (含自動建立 Google Task)
 document.getElementById("saveTaskBtn").addEventListener("click", async () => {
   if (!accessToken) return alert("請先登入！");
 
@@ -629,7 +660,6 @@ document.getElementById("saveTaskBtn").addEventListener("click", async () => {
   btn.textContent = "儲存中...";
   btn.disabled = true;
 
-  // 💡 同步建立 Google Task
   const displayTitle = category ? `[${category}] ${title}` : title;
   const taskId = await syncGoogleTask("", displayTitle, details, newDeadline, "待處理");
 
@@ -638,13 +668,11 @@ document.getElementById("saveTaskBtn").addEventListener("click", async () => {
   const createdTimeStr = `${createdAt.getFullYear()}/${(createdAt.getMonth()+1).toString().padStart(2,'0')}/${createdAt.getDate().toString().padStart(2,'0')} ${createdAt.getHours().toString().padStart(2,'0')}:${createdAt.getMinutes().toString().padStart(2,'0')}`;
   const initialLog = `[${createdTimeStr}] 案件建立（狀態：待處理）`;
   
-  // 💡 資料陣列擴增到第14格 (N欄) 塞入 Task ID
   const rowData = [
     "待處理", category, contact, source, title, details, newDeadline, now, now, initialLog, newTags, vendor, assignee, taskId 
   ];
 
   try {
-    // 💡 網址寫入範圍延伸為 A:N
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:N:append?valueInputOption=USER_ENTERED`, {
       method: "POST",
       headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
@@ -678,10 +706,8 @@ document.getElementById("saveTaskBtn").addEventListener("click", async () => {
   }
 });
 
-// 核心功能：從 Google Sheets 讀取案件總表
 async function loadTasksFromSheets() {
   try {
-    // 💡 抓取範圍延伸到 N 欄 (讀取 Task ID)
     const range = encodeURIComponent("案件總表!A2:N");
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -719,7 +745,7 @@ async function loadTasksFromSheets() {
       const row = item.rowData;
       const status = row[0] || "未定";
       const deadline = row[6] || "";
-      const taskId = row[13] || ""; // 💡 從 N 欄取得 Google Task ID
+      const taskId = row[13] || ""; 
       
       let isThisWeek = false;
       if (deadline !== "" && !status.includes("結案") && !status.includes("作廢")) {
@@ -743,7 +769,7 @@ async function loadTasksFromSheets() {
         tags: row[10] || "",
         vendor: row[11] || "無",
         assignee: row[12] || "",
-        taskId: taskId, // 💡 綁入資料模型中
+        taskId: taskId, 
         isUrgent: (deadline !== "" && deadline <= todayStr && !status.includes("結案")),
         isVoid: status === "已作廢",
         isThisWeek: isThisWeek 
@@ -823,11 +849,10 @@ function renderTable() {
     const encDeadline = encodeURIComponent(task.deadline);
     const encAssignee = encodeURIComponent(task.assignee);
     const encTitle = encodeURIComponent(task.title);
-    const encTaskId = encodeURIComponent(task.taskId); // 💡
+    const encTaskId = encodeURIComponent(task.taskId); 
     
     const rowBgClass = task.isThisWeek ? "bg-sky-50 hover:bg-sky-100" : "hover:bg-slate-50";
 
-    // 💡 注意：刪除和編輯按鈕都掛上了新的 taskId 和 title 參數
     tbody.innerHTML += `
       <tr class="${rowBgClass} transition border-b border-slate-100 last:border-0 table-row-item" 
           data-status="${task.status}" data-urgent="${task.isUrgent ? 'yes' : 'no'}" 
@@ -883,7 +908,6 @@ function reapplySort() {
     const va = (a.dataset[attr] || '').toString();
     const vb = (b.dataset[attr] || '').toString();
     
-    // 日期空白沉底
     if (currentSortCol === 'deadline' || currentSortCol === 'lastupdate') {
       if (va === "") return 1 * dir;
       if (vb === "") return -1 * dir;
@@ -1294,7 +1318,6 @@ function renderHistoryLog(rawLog) {
   }).join('');
 }
 
-// 💡 打開編輯 Modal，並將標題與 Google Task ID 寫入記憶變數
 function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, contactEnc, sourceEnc, deadlineEnc, assigneeEnc, titleEnc, taskIdEnc) {
   currentEditingRow = rowIndex;
   currentEditingLog = decodeURIComponent(logEnc);
@@ -1304,6 +1327,7 @@ function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, co
   
   document.getElementById("detailStatus").value = status;
   document.getElementById("detailNote").value = ""; 
+  document.getElementById("detailNoteDeadline").value = ""; // 💡 每次打開清空備註期限
   document.getElementById("detailTags").value = tagsEnc ? decodeURIComponent(tagsEnc) : ""; 
   
   document.getElementById("detailCategory").value = decodeURIComponent(catEnc);
@@ -1327,7 +1351,6 @@ function closeTaskDetailModal() {
   currentEditingTaskId = "";
 }
 
-// 儲存編輯變更 (含更新 Google Task)
 document.getElementById("saveDetailBtn").addEventListener("click", async () => {
   if (!currentEditingRow) return;
   
@@ -1339,8 +1362,13 @@ document.getElementById("saveDetailBtn").addEventListener("click", async () => {
   const newVendor = document.getElementById("detailVendor").value;
   const newContact = document.getElementById("detailContact").value;
   const newSource = document.getElementById("detailSource").value;
+  
   let newDeadline = document.getElementById("detailDeadline").value;
   if (newDeadline) newDeadline = newDeadline.replace(/-/g, '/');
+  
+  // 💡 取得備註的專屬期限
+  let newNoteDeadline = document.getElementById("detailNoteDeadline").value;
+  if (newNoteDeadline) newNoteDeadline = newNoteDeadline.replace(/-/g, '/');
   
   const newAssignee = document.getElementById("detailAssignee").value; 
   
@@ -1348,22 +1376,26 @@ document.getElementById("saveDetailBtn").addEventListener("click", async () => {
   btn.textContent = "儲存中...";
   btn.disabled = true;
 
-  await updateTaskDetailAPI(currentEditingRow, newStatus, currentEditingOriginalStatus, note, currentEditingLog, tags, newCat, newVendor, newContact, newSource, newDeadline, newAssignee, currentEditingTitle, currentEditingTaskId);
+  await updateTaskDetailAPI(currentEditingRow, newStatus, currentEditingOriginalStatus, note, currentEditingLog, tags, newCat, newVendor, newContact, newSource, newDeadline, newAssignee, currentEditingTitle, currentEditingTaskId, newNoteDeadline);
   
   btn.textContent = "儲存變更";
   btn.disabled = false;
   closeTaskDetailModal();
 });
 
-// 更新細節 API (寫回 Google Sheets + 同步 Google Task)
-async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, currentLog, tags, category, vendor, contact, source, deadline, assignee, title, taskId) {
+async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, currentLog, tags, category, vendor, contact, source, deadline, assignee, title, taskId, noteDeadline) {
   try {
     const now = new Date();
     const timeString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
     
-    // 💡 同步更新到 Google Tasks
+    // 💡 同步更新主任務到 Google Tasks
     const displayTitle = category ? `[${category}] ${title}` : title;
     const newTaskId = await syncGoogleTask(taskId, displayTitle, note, deadline, newStatus);
+
+    // 💡 如果有填寫備註期限，且有寫備註內容，就建立子任務！
+    if (note && noteDeadline && newTaskId) {
+      await createGoogleSubtask(newTaskId, note, noteDeadline);
+    }
 
     const fromStatus = oldStatus || newStatus;
     const changeLabel = (fromStatus !== newStatus) ? "狀態變更" : "狀態確認";
@@ -1371,7 +1403,6 @@ async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, current
     if (note) newLogEntry += `。備註：${note}`;
     const updatedLog = currentLog ? `${currentLog}\n\n${newLogEntry}` : newLogEntry;
 
-    // 💡 batchUpdate 加入 N 欄更新
     const body = {
       valueInputOption: "USER_ENTERED",
       data: [
@@ -1406,7 +1437,6 @@ async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, current
   }
 }
   
-// 刪除按鈕
 async function deleteTask(rowIndex, logEncoded, taskIdEnc) {
   const confirmDelete = confirm("⚠️ 確定要刪除這筆案件嗎？\n(案件將會被標記為「已作廢」並從列表中隱藏)");
   if (!confirmDelete) return;
@@ -1415,13 +1445,11 @@ async function deleteTask(rowIndex, logEncoded, taskIdEnc) {
   await updateSheetData(rowIndex, "已作廢", decodeURIComponent(logEncoded), taskId);
 }
 
-// 更新為已作廢 (連動 Google Tasks 完成狀態)
 async function updateSheetData(rowIndex, newStatus, currentLog, taskId) {
   try {
     const now = new Date();
     const timeString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
     
-    // 💡 同步將 Google Task 標記為完成
     await syncGoogleTask(taskId, null, null, null, "已作廢");
 
     const newLogEntry = `[${timeString}] 案件刪除（狀態變更：已作廢）`;
@@ -1457,7 +1485,6 @@ async function updateSheetData(rowIndex, newStatus, currentLog, taskId) {
   }
 }
 
-// 以下為所有篩選與介面切換邏輯 (維持不變)
 let dashboardFilter = null;
 let activeTagFilter = null;
 
