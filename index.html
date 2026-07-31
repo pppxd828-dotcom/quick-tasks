@@ -34,7 +34,7 @@
 
 <main class="max-w-7xl mx-auto px-4 mt-6">
 
-  <!-- 💡 期限甘特圖(時間軸)：有填最後期限的案件會以圓點呈現在對應日期上；預設收合，需要時再展開 -->
+  <!-- 💡 期限甘特圖(時間軸) -->
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
       <button type="button" onclick="toggleGanttChart()" class="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-800 transition">
@@ -89,16 +89,13 @@
     </div>
   </section>
 
-
   <!-- 案件資料表區域 -->
   <section class="bg-white rounded-xl shadow-sm border border-slate-200">
     
     <!-- 頂部過濾器與按鈕區塊 -->
     <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-      
-      <!-- 💡 左側：篩選器群組 (透過 flex 和 gap-3 讓它們橫向、整齊排列) -->
+      <!-- 篩選器群組 -->
       <div class="flex flex-wrap items-center gap-3">
-        
         <!-- 1. 狀態篩選 -->
         <div class="relative" id="statusDropdown">
           <button onclick="toggleDropdown('statusMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
@@ -174,13 +171,12 @@
             </div>
           </div>
         </div>
-        
       </div> <!-- /結束左側篩選器群組 -->
 
       <!-- 右側：欄位設定 + 匯出按鈕 -->
       <div class="flex items-center gap-2">
         <div class="relative" id="columnToggleDropdown">
-          <button type="button" onclick="toggleColumnMenu()" class="px-3 py-1.5 text-sm font-bold text-slate-500 bg-slate-100 rounded-md hover:bg-slate-200">🧩 更多欄位</button>
+          <button type="button" onclick="toggleColumnMenu()" class="px-3 py-1.5 text-sm font-bold text-slate-500 bg-slate-100 rounded-md hover:bg-slate-200 transition">🧩 更多欄位</button>
           <div id="columnMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-30 p-2">
             <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer">
               <input type="checkbox" onchange="toggleColumn('contact', this)" class="w-4 h-4 rounded text-blue-600">
@@ -192,15 +188,15 @@
             </label>
           </div>
         </div>
-        <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100">📥 匯出 Excel</button>
+        <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100 transition">📥 匯出 Excel</button>
       </div>
       
     </div>
 
-    <!-- 💡 標籤篩選中的提示條，點選任一標籤即可觸發 -->
-    <div id="tagFilterBanner" class="hidden items-center gap-2 px-3 py-2 mb-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-700">
+    <!-- 💡 標籤篩選中的提示條 -->
+    <div id="tagFilterBanner" class="hidden items-center gap-2 px-3 py-2 mb-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-700 mx-4 mt-4">
       🏷️ 篩選標籤：<span id="tagFilterLabel" class="font-bold"></span>
-      <button onclick="clearTagFilter()" class="ml-auto text-purple-500 hover:text-purple-700 font-bold">清除 ✕</button>
+      <button onclick="clearTagFilter()" class="ml-auto text-purple-500 hover:text-purple-700 font-bold transition">清除 ✕</button>
     </div>
 
     <div class="overflow-x-auto">
@@ -211,12 +207,11 @@
             <th class="px-3 py-4 font-semibold text-center whitespace-nowrap" data-col="edit">編輯</th>
             <th class="px-6 py-4 font-bold whitespace-nowrap cursor-pointer select-none hover:text-slate-600" data-col="category" onclick="sortTable('category')">專案類別<span class="sort-arrow" data-sort-key="category"></span></th>
             <th class="px-6 py-4 font-bold text-indigo-600 whitespace-nowrap cursor-pointer select-none hover:text-indigo-800" data-col="vendor" onclick="sortTable('vendor')">負責廠商<span class="sort-arrow" data-sort-key="vendor"></span></th>
-            <!-- 💡 任務摘要保留彈性，並設定最小寬度避免被擠太扁 -->
             <th class="px-6 py-4 font-semibold text-left min-w-[200px] cursor-pointer select-none hover:text-slate-600" data-col="title" onclick="sortTable('title')">任務摘要<span class="sort-arrow" data-sort-key="title"></span></th>
             <th class="px-6 py-4 font-bold whitespace-nowrap cursor-pointer select-none hover:text-slate-600" data-col="status" onclick="sortTable('status')">狀態<span class="sort-arrow" data-sort-key="status"></span></th>
             <th class="px-6 py-4 font-bold text-blue-600 whitespace-nowrap cursor-pointer select-none hover:text-blue-800" data-col="assignee" onclick="sortTable('assignee')">處理人<span class="sort-arrow" data-sort-key="assignee"></span></th>
             <th class="px-6 py-4 font-semibold text-left whitespace-nowrap cursor-pointer select-none hover:text-slate-600" data-col="tags" onclick="sortTable('tags')">標籤<span class="sort-arrow" data-sort-key="tags"></span></th>
-            <th class="px-6 py-4 font-bold whitespace-nowrap cursor-pointer select-none hover:text-slate-600" data-col="deadline" onclick="sortTable('deadline')">最後期限<span class="sort-arrow" data-sort-key="deadline"></span></th>
+            <th class="px-6 py-4 font-bold whitespace-nowrap cursor-pointer select-none hover:text-slate-600 text-blue-500" data-col="deadline" onclick="sortTable('deadline')">最後期限<span class="sort-arrow" data-sort-key="deadline"> ▲</span></th>
             <th class="px-6 py-4 font-bold whitespace-nowrap cursor-pointer select-none hover:text-slate-600" data-col="lastupdate" onclick="sortTable('lastupdate')">最後更新<span class="sort-arrow" data-sort-key="lastupdate"></span></th>
             <th class="px-6 py-4 font-bold whitespace-nowrap hidden" data-col="contact">聯絡人</th>
             <th class="px-6 py-4 font-bold whitespace-nowrap hidden" data-col="source">任務來源</th>
@@ -237,18 +232,18 @@
   <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden">
     <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
       <h2 class="text-lg font-bold text-slate-800">新增追蹤案件</h2>
-      <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+      <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 font-bold text-xl transition">&times;</button>
     </div>
     <div class="p-6 grid grid-cols-2 gap-4">
       <div class="col-span-2 sm:col-span-1">
-        <label class="block text-xs font-bold text-slate-500 mb-1">專案類別 (來自 Google Sheets)</label>
-        <select id="categorySelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <label class="block text-xs font-bold text-slate-500 mb-1">專案類別</label>
+        <select id="categorySelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
           <option value="">載入中...</option>
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1">
         <label class="block text-xs font-bold text-slate-500 mb-1">負責廠商</label>
-        <select id="vendorSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <select id="vendorSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
           <option value="無">無 / 內部處理</option>
           <option value="DMS">DMS</option>
           <option value="三商">三商</option>
@@ -257,7 +252,7 @@
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1">
-        <label class="block text-xs font-bold text-slate-500 mb-1">聯絡人 (來自 Google Sheets)</label>
+        <label class="block text-xs font-bold text-slate-500 mb-1">聯絡人</label>
         <div class="relative combo-field">
           <input type="hidden" id="contactSelect" value="">
           <button type="button" onclick="toggleCombo('contactSelect', this)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-left flex justify-between items-center bg-white hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition">
@@ -273,19 +268,19 @@
         </div>
       </div>
      <div class="col-span-2 sm:col-span-1">
-        <label class="block text-xs font-bold text-slate-500 mb-1">處理人 (來自 Google Sheets)</label>
-        <select id="newTaskAssignee" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <label class="block text-xs font-bold text-slate-500 mb-1">處理人</label>
+        <select id="newTaskAssignee" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
           <option value="">載入中...</option>
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1">
-        <label class="block text-xs font-bold text-slate-500 mb-1">任務來源 (來自 Google Sheets)</label>
-        <select id="taskSource" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <label class="block text-xs font-bold text-slate-500 mb-1">任務來源</label>
+        <select id="taskSource" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
           <option value="">載入中...</option>
        </select>
       </div>
       <div class="col-span-2 sm:col-span-1">
-        <label class="block text-xs font-bold text-slate-500 mb-1">最後期限</label>
+        <label class="block text-xs font-bold text-slate-500 mb-1">最後期限 <span class="text-[10px] text-blue-500 font-normal">(將自動同步至 Google Tasks)</span></label>
         <input type="date" id="newTaskDeadline" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-700">
       </div>
       <div class="col-span-2 sm:col-span-1">
@@ -294,33 +289,29 @@
       </div>
       <div class="col-span-2">
         <label class="block text-xs font-bold text-slate-500 mb-1">任務摘要</label>
-        <input type="text" id="taskTitle" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500" placeholder="一句話描述這個任務...">
+        <input type="text" id="taskTitle" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="一句話描述這個任務...">
       </div>
       <div class="col-span-2">
         <label class="block text-xs font-bold text-slate-500 mb-1">詳細說明與網址</label>
-        <textarea id="taskDetails" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 resize-none" placeholder="貼上表單連結、錯誤訊息或備註..."></textarea>
+        <textarea id="taskDetails" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="貼上表單連結、錯誤訊息或備註..."></textarea>
       </div>
     </div>
     <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-      <button id="cancelBtn" class="px-4 py-2 rounded-lg text-slate-600 font-bold hover:bg-slate-200 text-sm">取消</button>
-      <button id="saveTaskBtn" class="px-5 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 text-sm shadow-sm">儲存案件</button>
+      <button id="cancelBtn" class="px-4 py-2 rounded-lg text-slate-600 font-bold hover:bg-slate-200 text-sm transition">取消</button>
+      <button id="saveTaskBtn" class="px-5 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 text-sm shadow-sm transition">儲存案件</button>
     </div>
   </div>
 </div>
 
-  <!-- 案件處理與紀錄 Modal -->
+<!-- 案件處理與紀錄 Modal -->
 <div id="taskDetailModal" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
   <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-    
-    <!-- 標題區 -->
     <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
       <h3 class="font-bold text-lg text-slate-800">📝 案件處理與紀錄</h3>
       <button onclick="closeTaskDetailModal()" class="text-slate-400 hover:text-rose-500 transition text-xl font-bold">&times;</button>
     </div>
     
-    <!-- 內容區 -->
     <div class="p-6 overflow-y-auto flex-1 space-y-5">
-      <!-- 狀態修改 -->
       <div>
         <label class="block text-sm font-bold text-slate-700 mb-2">更新案件狀態</label>
         <select id="detailStatus" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 font-medium">
@@ -331,7 +322,7 @@
           <option value="結案">結案</option>
         </select>
       </div>
-      <!-- 💡 新增：可修改的詳細資料 -->
+      
       <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
         <div class="col-span-2 sm:col-span-1">
           <label class="block text-xs font-bold text-slate-600 mb-1">專案類別</label>
@@ -372,17 +363,15 @@
           <select id="detailSource" class="w-full border border-slate-200 rounded text-sm px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"></select>
         </div>
         <div class="col-span-2">
-          <label class="block text-xs font-bold text-slate-600 mb-1">最後期限</label>
+          <label class="block text-xs font-bold text-slate-600 mb-1">最後期限 <span class="text-[10px] text-blue-500 font-normal">(連動 Google Tasks)</span></label>
           <input type="date" id="detailDeadline" class="w-full border border-slate-200 rounded text-sm px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 text-slate-700">
         </div>
       </div>
-      <!-- 標籤修改 -->
       <div>
         <label class="block text-sm font-bold text-slate-700 mb-2">🏷️ 案件標籤 (多個標籤請用半形逗號 , 分隔)</label>
         <input type="text" id="detailTags" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 placeholder-slate-400" placeholder="例如：VIP, 需要報價, 跨部門">
       </div>
       
-      <!-- 執行說明 -->
       <div>
         <label class="block text-sm font-bold text-slate-700 mb-2">新增執行說明 (選填)</label>
         <textarea id="detailNote" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 placeholder-slate-400" placeholder="請描述目前的進度、遇到的問題，或與客戶確認的結果..."></textarea>
@@ -390,45 +379,51 @@
 
       <hr class="border-slate-100">
 
-      <!-- 歷史歷程 LOG -->
       <div>
         <label class="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-1">
           🔄 處理軌跡（<span id="detailLogCount">0</span> 筆，新到舊）
         </label>
         <div id="detailLogList" class="bg-white border border-slate-100 rounded-lg p-4 h-56 overflow-y-auto">
-          <!-- 歷程紀錄會顯示在這裡 -->
         </div>
       </div>
     </div>
 
-    <!-- 按鈕區 -->
     <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-3">
       <button onclick="closeTaskDetailModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition font-medium">取消</button>
       <button id="saveDetailBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium shadow-sm">儲存變更</button>
     </div>
-    
   </div>
 </div>
 
 <script>
-/* === 請換成你的 Client ID === */
+/* === Google API 憑證 === */
 const CLIENT_ID = "370645265767-phukpstpp7prf0ioh2tt6khc6dchk015.apps.googleusercontent.com";
-// 擴充權限：加入 Google Sheets API 的讀寫權限
+// 擴充權限：已同時包含 Google Tasks 與 Sheets
 const SCOPES = "https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/spreadsheets"; 
-// 你提供的 Spreadsheet ID
 const SPREADSHEET_ID = "1Q7ncYV9-a_Vl54spHHH96x_FunVlf15QNLIbARJahq4";
 
 let accessToken = null;
 let tokenClient = null;
 
-// Modal 控制邏輯
+// 全域狀態變數
+let allTasksData = []; 
+let currentSortCol = 'deadline'; 
+let currentSortAsc = true; 
+let currentTagFilter = ""; 
+
+// 編輯 Modal 記憶變數
+let currentEditingRow = null;
+let currentEditingLog = "";
+let currentEditingOriginalStatus = ""; 
+let currentEditingTitle = "";   // 💡 記憶當下編輯的任務標題
+let currentEditingTaskId = "";  // 💡 記憶當下編輯的 Google Task ID
+
 const modal = document.getElementById("taskModal");
 document.getElementById("openModalBtn").addEventListener("click", () => modal.classList.remove("hidden"));
 document.getElementById("closeModalBtn").addEventListener("click", () => modal.classList.add("hidden"));
 document.getElementById("cancelBtn").addEventListener("click", () => modal.classList.add("hidden"));
 
 window.addEventListener("load", () => {
-  // 1. 網頁載入時，先去 localStorage 找找看有沒有之前存下來的 Token
   const savedToken = localStorage.getItem("google_access_token");
   if (savedToken) {
     accessToken = savedToken;
@@ -437,28 +432,22 @@ window.addEventListener("load", () => {
     loadTasksFromSheets();
   }
 
-  // 2. 初始化 Google 登入客戶端
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (resp) => {
       if (resp.error) return alert("登入失敗：" + resp.error);
       accessToken = resp.access_token;
-      
-      // 💡 關鍵新增：登入成功後，把 Token 存進瀏覽器！
       localStorage.setItem("google_access_token", accessToken);
-      
       setLoggedInUI(true);
       loadSettingsFromSheets();
       loadTasksFromSheets();
     },
   });
 
-  // 3. 綁定按鈕
   document.getElementById("loginBtn").addEventListener("click", () => tokenClient.requestAccessToken({ prompt: "consent" }));
   
   document.getElementById("logoutBtn").addEventListener("click", () => {
-    // 💡 關鍵新增：登出時，把瀏覽器裡的 Token 刪掉
     localStorage.removeItem("google_access_token");
     if (accessToken) {
       google.accounts.oauth2.revoke(accessToken, () => { 
@@ -478,11 +467,63 @@ function setLoggedInUI(loggedIn) {
   document.getElementById("userStatus").textContent = loggedIn ? "✅ 已連線至資料庫" : "";
 }
 
-// 核心功能：從 Google Sheets 抓取自訂選項
+// 💡 核心 API：與 Google Tasks 同步 (建立 / 更新狀態 / 更新期限)
+async function syncGoogleTask(taskId, title, notes, deadline, status) {
+  if (!accessToken) return taskId; // 防呆
+
+  // 轉換期限為 Google Tasks 要求的 RFC3339 格式 (YYYY-MM-DDT00:00:00.000Z)
+  let dueStr = null;
+  if (deadline) {
+    const [y, m, d] = deadline.split('/');
+    dueStr = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString();
+  }
+
+  // 根據我們的狀態，轉換成 Google Task 的完成狀態
+  const taskStatus = (status.includes("結案") || status.includes("作廢")) ? "completed" : "needsAction";
+
+  try {
+    if (taskId) {
+      // ✅ 任務已存在：使用 PATCH 更新狀態與期限
+      const body = { status: taskStatus };
+      if (title) body.title = title;
+      body.notes = notes || "";
+      body.due = dueStr || null; // 支援清除日期
+
+      await fetch(`https://tasks.googleapis.com/tasks/v1/lists/@default/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      return taskId;
+
+    } else {
+      // ✅ 任務不存在：如果已經結案/作廢就不建立了；否則呼叫 POST 建立
+      if (taskStatus === "completed") return "";
+
+      const body = {
+        title: title || "未命名案件",
+        notes: notes || "",
+        status: taskStatus
+      };
+      if (dueStr) body.due = dueStr;
+
+      const res = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/@default/tasks`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      return data.id || ""; // 回傳 Google 自動生成的 Task ID
+    }
+  } catch (err) {
+    console.error("同步至 Google Tasks 發生錯誤:", err);
+    return taskId || "";
+  }
+}
+
 // 核心功能：從 Google Sheets 抓取自訂選項
 async function loadSettingsFromSheets() {
   try {
-    // 1. 抓取類別、聯絡人、任務來源、處理人
     const [catRes, contactRes, sourceRes, assigneeRes] = await Promise.all([
       fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!A2:A`, { headers: { Authorization: `Bearer ${accessToken}` } }),
       fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/系統設定!C2:E`, { headers: { Authorization: `Bearer ${accessToken}` } }),
@@ -495,7 +536,6 @@ async function loadSettingsFromSheets() {
     const sourceData = await sourceRes.json();
     const assigneeData = await assigneeRes.json();
 
-    // 2. 更新「專案類別」選單
     const catSelect = document.getElementById("categorySelect");
     const detailCatSelect = document.getElementById("detailCategory");
     let formCatOptions = '<option value="">請選擇...</option>'; 
@@ -518,24 +558,17 @@ async function loadSettingsFromSheets() {
     document.getElementById("categoryFilterList").innerHTML = filterCatHtml;
     updateDropdownBtn('category', '類別'); 
 
-    // 3. 更新「聯絡人」選單（改用自訂下拉選單元件，避免清單被瀏覽器貼在畫面底部）
     let contactOptions = [];
     if (contactData.values) {
       contactData.values.forEach(row => {
         if (row[0]) {
-          contactOptions.push({
-            value: row[0],
-            primary: row[0],
-            secondary: row[1] || "",
-            tag: row[2] || ""
-          });
+          contactOptions.push({ value: row[0], primary: row[0], secondary: row[1] || "", tag: row[2] || "" });
         }
       });
     }
     setComboOptions("contactSelect", contactOptions);
     setComboOptions("detailContact", contactOptions);
 
-    // 4. 更新「任務來源」選單
     const sourceSelect = document.getElementById("taskSource");
     const detailSourceSelect = document.getElementById("detailSource"); 
     let sourceOptions = '<option value="">請選擇...</option>';
@@ -547,7 +580,6 @@ async function loadSettingsFromSheets() {
     sourceSelect.innerHTML = sourceOptions;
     detailSourceSelect.innerHTML = sourceOptions; 
 
-    // 5. 更新「處理人」選單
     const assigneeSelect = document.getElementById("newTaskAssignee");
     const detailAssigneeSelect = document.getElementById("detailAssignee");
     let formAssigneeOptions = '<option value="">請選擇...</option>';
@@ -570,86 +602,87 @@ async function loadSettingsFromSheets() {
     document.getElementById("assigneeFilterList").innerHTML = filterAssigneeHtml;
     updateDropdownBtn('assignee', '處理人'); 
 
-    console.log("✅ 系統設定載入成功！");
-    
   } catch (error) {
     console.error("載入設定失敗:", error);
     alert("讀取試算表失敗，請確定你有建立『系統設定』分頁，並且欄位名稱正確。");
   }
 }
-// 綁定儲存按鈕的點擊事件
-document.getElementById("saveTaskBtn").addEventListener("click", saveTaskToSheets);
 
-async function saveTaskToSheets() {
+// 儲存案件 (含自動建立 Google Task)
+document.getElementById("saveTaskBtn").addEventListener("click", async () => {
   if (!accessToken) return alert("請先登入！");
 
   const category = document.getElementById("categorySelect").value;
-  const vendor = document.getElementById("vendorSelect").value;      // 💡 抓取廠商
-  const assignee = document.getElementById("newTaskAssignee").value; // 💡 抓處理人
+  const vendor = document.getElementById("vendorSelect").value;      
+  const assignee = document.getElementById("newTaskAssignee").value; 
   const contact = document.getElementById("contactSelect").value;
-  const source = document.getElementById("taskSource").value;        // 💡 抓任務來源
+  const source = document.getElementById("taskSource").value;        
   const title = document.getElementById("taskTitle").value;
   const newTags = document.getElementById("newTaskTags").value.trim();
   let newDeadline = document.getElementById("newTaskDeadline").value;
-  if (newDeadline) newDeadline = newDeadline.replace(/-/g, '/'); // 轉換成 YYYY/MM/DD 格式
+  if (newDeadline) newDeadline = newDeadline.replace(/-/g, '/'); 
   const details = document.getElementById("taskDetails").value;
   
   if (!title) return alert("任務摘要不能是空的喔！");
 
+  const btn = document.getElementById("saveTaskBtn");
+  btn.textContent = "儲存中...";
+  btn.disabled = true;
+
+  // 💡 同步建立 Google Task
+  const displayTitle = category ? `[${category}] ${title}` : title;
+  const taskId = await syncGoogleTask("", displayTitle, details, newDeadline, "待處理");
+
   const now = new Date().toLocaleString('zh-TW');
-  // 💡 建立初始的處理歷程紀錄，讓「處理軌跡」一開始就有「案件建立」這一筆
   const createdAt = new Date();
   const createdTimeStr = `${createdAt.getFullYear()}/${(createdAt.getMonth()+1).toString().padStart(2,'0')}/${createdAt.getDate().toString().padStart(2,'0')} ${createdAt.getHours().toString().padStart(2,'0')}:${createdAt.getMinutes().toString().padStart(2,'0')}`;
   const initialLog = `[${createdTimeStr}] 案件建立（狀態：待處理）`;
   
-  // 2. 依照試算表的 A~I 欄位順序排好陣列
+  // 💡 資料陣列擴增到第14格 (N欄) 塞入 Task ID
   const rowData = [
-    "待處理", category, contact, source, title, details, newDeadline, now, now, initialLog, newTags, vendor,
-    assignee // 💡 塞入第13格 (M欄)
+    "待處理", category, contact, source, title, details, newDeadline, now, now, initialLog, newTags, vendor, assignee, taskId 
   ];
 
   try {
-    // 3. 網址最後的範圍從 A:I 改成 A:M
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:M:append?valueInputOption=USER_ENTERED`, {
+    // 💡 網址寫入範圍延伸為 A:N
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:N:append?valueInputOption=USER_ENTERED`, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
-      },
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ values: [rowData] })
     });
 
     const result = await response.json();
     
-if (result.updates) {
-  alert("✅ 案件儲存成功！");
+    if (result.updates) {
+      alert("✅ 案件儲存成功！已同步至 Google Tasks。");
+      document.getElementById("categorySelect").value = "";
+      document.getElementById("vendorSelect").value = "無"; 
+      setComboValue("contactSelect", "");
+      document.getElementById("taskSource").value = ""; 
+      document.getElementById("newTaskAssignee").value = ""; 
+      document.getElementById("newTaskDeadline").value = "";
+      document.getElementById("newTaskTags").value = "";
+      document.getElementById("taskTitle").value = "";
+      document.getElementById("taskDetails").value = "";
       
-    // 💡 徹底清空所有新增案件 Modal 的欄位，恢復預設值
-    document.getElementById("categorySelect").value = "";
-    document.getElementById("vendorSelect").value = "無"; // 廠商預設為「無」
-    setComboValue("contactSelect", "");
-    document.getElementById("taskSource").value = ""; 
-    document.getElementById("newTaskAssignee").value = ""; // 處理人
-    document.getElementById("newTaskDeadline").value = "";
-    document.getElementById("newTaskTags").value = "";
-    document.getElementById("taskTitle").value = "";
-    document.getElementById("taskDetails").value = "";
-      
-    // 關閉 Modal 並重新載入表格
-    modal.classList.add("hidden");
-    loadTasksFromSheets(); 
-  } else {
-    console.error("儲存失敗:", result);
-  }
+      modal.classList.add("hidden");
+      loadTasksFromSheets(); 
+    } else {
+      console.error("儲存失敗:", result);
+    }
   } catch (error) {
     console.error("發生錯誤:", error);
+  } finally {
+    btn.textContent = "儲存案件";
+    btn.disabled = false;
   }
-}
-// 核心功能：從 Google Sheets 讀取案件總表並顯示在畫面上
+});
+
+// 核心功能：從 Google Sheets 讀取案件總表
 async function loadTasksFromSheets() {
   try {
-    // 💡 抓取範圍延伸到 M 欄 (標籤)
-    const range = encodeURIComponent("案件總表!A2:M");
+    // 💡 抓取範圍延伸到 N 欄 (讀取 Task ID)
+    const range = encodeURIComponent("案件總表!A2:N");
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store" 
@@ -658,106 +691,90 @@ async function loadTasksFromSheets() {
     if (response.status === 401) return alert("⚠️ 憑證過期，請重新登入！");
     const data = await response.json();
     const tbody = document.getElementById("taskTableBody");
-    tbody.innerHTML = ""; 
 
     if (!data.values || data.values.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400">目前沒有任何案件！</td></tr>';
+      allTasksData = [];
+      tbody.innerHTML = '<tr><td colspan="12" class="px-6 py-10 text-center text-slate-400">目前沒有任何案件！</td></tr>';
       renderGanttChart([]);
       return;
     }
 
     const rowsWithIndex = data.values.map((row, index) => ({ rowData: row, rowIndex: index + 2 }));
     const validRows = rowsWithIndex.filter(item => item.rowData.length > 0 && item.rowData[0] !== "");
-    const rows = validRows.reverse(); 
     
-    let urgentCount = 0, todoCount = 0, doingCount = 0, waitingCount = 0;
-    const ganttItems = []; // 💡 收集有填「最後期限」的案件，畫在上方時間軸
-    
-    // 💡 取得今天的日期 (格式：YYYY/MM/DD) 以判斷今日急件
     const today = new Date();
+    today.setHours(0, 0, 0, 0); 
     const todayStr = `${today.getFullYear()}/${(today.getMonth()+1).toString().padStart(2,'0')}/${today.getDate().toString().padStart(2,'0')}`;
+
+    const currentDay = today.getDay(); 
+    const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - distanceToMonday);
     
-    rows.forEach(item => {
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    allTasksData = validRows.map(item => { 
       const row = item.rowData;
-      const rowIndex = item.rowIndex; 
       const status = row[0] || "未定";
-      
-      if (status === "已作廢") return;
-
-      const category = row[1] || "";
-      const contact = row[2] || "";
-      const source = row[3] || "";
-      const title = row[4] || "";
       const deadline = row[6] || "";
-      const lastUpdate = row[8] || row[7] || ""; 
-      const historyLog = row[9] || ""; 
-      const tags = row[10] || ""; // 💡 抓取 K 欄的標籤
-      const vendor = row[11] || "無"; // 💡 抓取 L 欄，舊案件如果沒有填就顯示「無」
-      const assignee = row[12] || ""; // 💡 抓 M 欄處理人
-     
-      // 💡 統計邏輯升級：只有「死線小於等於今天」且「未結案」才算今日急件！
-      if (status.includes("待處理")) todoCount++;
-      if (status.includes("進行中")) doingCount++;
-      if (status.includes("卡關") || status.includes("等回覆")) waitingCount++;
-      if (deadline !== "" && deadline <= todayStr && !status.includes("結案")) urgentCount++; 
-      if (deadline !== "") ganttItems.push({ title, deadline, status });
-
-      let statusColor = "bg-slate-100 text-slate-600";
-      if (status.includes("待處理")) statusColor = "bg-amber-100 text-amber-700";
-      else if (status.includes("進行中")) statusColor = "bg-blue-100 text-blue-700";
-      else if (status.includes("結案")) statusColor = "bg-emerald-100 text-emerald-700";
-
-      // 💡 渲染標籤：把逗號分隔的文字，變成一顆顆可點擊篩選的 HTML 標籤
-      let tagsHtml = "";
-      if (tags) {
-        tagsHtml = tags.split(',').map(t => {
-          const trimmed = t.trim();
-          if (!trimmed) return '';
-          const encTag = encodeURIComponent(trimmed);
-          return `<span onclick="filterByTag('${encTag}')" class="inline-block bg-purple-100 text-purple-700 hover:bg-purple-200 cursor-pointer px-2 py-0.5 rounded-full text-xs font-medium mr-1 mb-1 transition" title="點擊以篩選相同標籤">${escapeHtml(trimmed)}</span>`;
-        }).join('');
+      const taskId = row[13] || ""; // 💡 從 N 欄取得 Google Task ID
+      
+      let isThisWeek = false;
+      if (deadline !== "" && !status.includes("結案") && !status.includes("作廢")) {
+        const [y, m, d] = deadline.split('/').map(Number);
+        const dlDate = new Date(y, m-1, d);
+        if (dlDate >= startOfWeek && dlDate <= endOfWeek) {
+          isThisWeek = true;
+        }
       }
 
-      const logEncoded = encodeURIComponent(historyLog);
-      // 傳遞給 Modal 時，多傳一個標籤參數
-      const tagsEncoded = encodeURIComponent(tags); 
-      // 💡 在渲染按鈕前，先把所有要帶入 Modal 的資料打包編碼
-      const encLog = encodeURIComponent(historyLog);
-      const encTags = encodeURIComponent(tags);
-      const encCat = encodeURIComponent(category);
-      const encVendor = encodeURIComponent(vendor);
-      const encContact = encodeURIComponent(contact);
-      const encSource = encodeURIComponent(source);
-      const encDeadline = encodeURIComponent(deadline);
-      const encAssignee = encodeURIComponent(assignee);
-      
-      // 💡 欄位順序：刪除、編輯、專案類別、負責廠商、任務摘要、狀態、處理人、標籤、最後期限、最後更新，其餘(聯絡人/任務來源)預設隱藏
-      tbody.innerHTML += `
-        <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-0"
-            data-status="${status}" data-urgent="${(deadline !== "" && deadline <= todayStr && !status.includes("結案")) ? 'yes' : 'no'}"
-            data-sort-category="${escapeHtml(category)}" data-sort-vendor="${escapeHtml(vendor)}" data-sort-title="${escapeHtml(title)}"
-            data-sort-status="${escapeHtml(status)}" data-sort-assignee="${escapeHtml(assignee)}" data-sort-tags="${escapeHtml(tags)}"
-            data-sort-deadline="${escapeHtml(deadline)}" data-sort-lastupdate="${escapeHtml(lastUpdate)}">
-          <td class="px-3 py-3 text-center whitespace-nowrap" data-col="delete">
-            <button onclick="deleteTask(${rowIndex}, '${logEncoded}')" class="text-rose-500 hover:text-rose-700 transition text-base" title="刪除">🗑️</button>
-          </td>
-          <td class="px-3 py-3 text-center whitespace-nowrap" data-col="edit">
-            <button onclick="openTaskDetail(${rowIndex}, '${status}', '${encLog}', '${encTags}', '${encCat}', '${encVendor}', '${encContact}', '${encSource}', '${encDeadline}', '${encAssignee}')" class="text-blue-500 hover:text-blue-700 transition text-base" title="編輯">✏️</button>
-          </td>
-          <td class="px-6 py-3 font-medium text-slate-700 whitespace-nowrap" data-col="category">${category}</td>
-          <td class="px-6 py-3 font-bold text-indigo-600 whitespace-nowrap" data-col="vendor">${vendor}</td>
-          <!-- 💡 任務摘要不加 nowrap，讓過長的敘述可以自然換行，版面才不會無限長 -->
-          <td class="px-6 py-3 font-bold text-slate-800" data-col="title">${title}</td>
-          <td class="px-6 py-3 whitespace-nowrap" data-col="status"><span class="px-2 py-1 rounded-md text-xs font-bold ${statusColor}">${status}</span></td>
-          <td class="px-6 py-3 font-bold text-blue-600 whitespace-nowrap" data-col="assignee">${assignee}</td>
-          <!-- 💡 標籤加個最大寬度，避免標籤太多把版面撐爆 -->
-          <td class="px-6 py-3 max-w-[150px]" data-col="tags">${tagsHtml}</td> 
-          <td class="px-6 py-3 text-rose-500 font-medium text-sm whitespace-nowrap" data-col="deadline">${deadline || "-"}</td>
-          <td class="px-6 py-3 text-xs text-slate-400 whitespace-nowrap" data-col="lastupdate">${lastUpdate}</td>
-          <td class="px-6 py-3 text-slate-600 whitespace-nowrap hidden" data-col="contact">${contact}</td>
-          <td class="px-6 py-3 text-slate-400 text-xs whitespace-nowrap hidden" data-col="source">${source}</td>
-        </tr>
-      `;
+      return {
+        rowIndex: item.rowIndex,
+        status: status,
+        category: row[1] || "",
+        contact: row[2] || "",
+        source: row[3] || "",
+        title: row[4] || "",
+        deadline: deadline,
+        lastUpdate: row[8] || row[7] || "",
+        historyLog: row[9] || "",
+        tags: row[10] || "",
+        vendor: row[11] || "無",
+        assignee: row[12] || "",
+        taskId: taskId, // 💡 綁入資料模型中
+        isUrgent: (deadline !== "" && deadline <= todayStr && !status.includes("結案")),
+        isVoid: status === "已作廢",
+        isThisWeek: isThisWeek 
+      };
+    }).filter(task => !task.isVoid); 
+
+    allTasksData.sort((a, b) => {
+      let valA = a.deadline || "";
+      let valB = b.deadline || "";
+      if (valA === "") return 1;  
+      if (valB === "") return -1; 
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+    
+    currentSortCol = 'deadline';
+    currentSortAsc = true;
+    
+    document.querySelectorAll('th span[id^="sort-"]').forEach(span => span.textContent = "");
+    const sortIcon = document.getElementById('sort-deadline');
+    if (sortIcon) sortIcon.textContent = " ▲";
+
+    let urgentCount = 0, todoCount = 0, doingCount = 0, waitingCount = 0;
+    const ganttItems = [];
+    allTasksData.forEach(t => {
+      if (t.status.includes("待處理")) todoCount++;
+      if (t.status.includes("進行中")) doingCount++;
+      if (t.status.includes("卡關") || t.status.includes("等回覆")) waitingCount++;
+      if (t.isUrgent) urgentCount++; 
+      if (t.deadline !== "") ganttItems.push({ title: t.title, deadline: t.deadline, status: t.status });
     });
     
     if (document.getElementById("countUrgent")) document.getElementById("countUrgent").textContent = urgentCount;
@@ -766,15 +783,128 @@ async function loadTasksFromSheets() {
     if (document.getElementById("countWaiting")) document.getElementById("countWaiting").textContent = waitingCount;
 
     renderGanttChart(ganttItems);
+    renderTable();
 
-    reapplySort();
-    if (typeof applyFilter === "function") applyFilter();
   } catch (error) {
     console.error("載入失敗:", error);
   }
 }
 
-// 💡 畫出最上方的「期限時間軸」：把有填最後期限的案件，以圓點畫在對應日期上
+function renderTable() {
+  const tbody = document.getElementById("taskTableBody");
+  tbody.innerHTML = ""; 
+
+  if (allTasksData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" class="px-6 py-10 text-center text-slate-400">目前沒有任何案件！</td></tr>';
+    return;
+  }
+
+  allTasksData.forEach(task => {
+    let statusColor = "bg-slate-100 text-slate-600";
+    if (task.status.includes("待處理")) statusColor = "bg-amber-100 text-amber-700";
+    else if (task.status.includes("進行中")) statusColor = "bg-blue-100 text-blue-700";
+    else if (task.status.includes("結案")) statusColor = "bg-emerald-100 text-emerald-700";
+
+    let tagsHtml = "";
+    if (task.tags) {
+      tagsHtml = task.tags.split(',').map(t => {
+        const tagText = t.trim();
+        if (!tagText) return '';
+        return `<span onclick="filterByTag('${encodeURIComponent(tagText)}')" class="inline-block bg-purple-100 text-purple-700 hover:bg-purple-200 hover:scale-105 px-2 py-0.5 rounded-full text-xs font-medium mr-1 mb-1 transition cursor-pointer">${escapeHtml(tagText)}</span>`;
+      }).join('');
+    }
+
+    const encLog = encodeURIComponent(task.historyLog);
+    const encTags = encodeURIComponent(task.tags);
+    const encCat = encodeURIComponent(task.category);
+    const encVendor = encodeURIComponent(task.vendor);
+    const encContact = encodeURIComponent(task.contact);
+    const encSource = encodeURIComponent(task.source);
+    const encDeadline = encodeURIComponent(task.deadline);
+    const encAssignee = encodeURIComponent(task.assignee);
+    const encTitle = encodeURIComponent(task.title);
+    const encTaskId = encodeURIComponent(task.taskId); // 💡
+    
+    const rowBgClass = task.isThisWeek ? "bg-sky-50 hover:bg-sky-100" : "hover:bg-slate-50";
+
+    // 💡 注意：刪除和編輯按鈕都掛上了新的 taskId 和 title 參數
+    tbody.innerHTML += `
+      <tr class="${rowBgClass} transition border-b border-slate-100 last:border-0 table-row-item" 
+          data-status="${task.status}" data-urgent="${task.isUrgent ? 'yes' : 'no'}" 
+          data-category="${task.category}" data-vendor="${task.vendor}" 
+          data-assignee="${task.assignee}" data-tags="${task.tags}"
+          data-sort-category="${escapeHtml(task.category)}" data-sort-vendor="${escapeHtml(task.vendor)}" data-sort-title="${escapeHtml(task.title)}"
+          data-sort-status="${escapeHtml(task.status)}" data-sort-assignee="${escapeHtml(task.assignee)}" data-sort-tags="${escapeHtml(task.tags)}"
+          data-sort-deadline="${escapeHtml(task.deadline)}" data-sort-lastupdate="${escapeHtml(task.lastUpdate)}">
+        <td class="px-3 py-3 text-center whitespace-nowrap" data-col="delete">
+          <button onclick="deleteTask(${task.rowIndex}, '${encLog}', '${encTaskId}')" class="hover:scale-125 transition text-lg" title="刪除並完成任務">🗑️</button>
+        </td>
+        <td class="px-3 py-3 text-center whitespace-nowrap" data-col="edit">
+          <button onclick="openTaskDetail(${task.rowIndex}, '${task.status}', '${encLog}', '${encTags}', '${encCat}', '${encVendor}', '${encContact}', '${encSource}', '${encDeadline}', '${encAssignee}', '${encTitle}', '${encTaskId}')" class="hover:scale-125 transition text-lg" title="編輯">✏️</button>
+        </td>
+        <td class="px-6 py-3 font-medium text-slate-700 whitespace-nowrap" data-col="category">${task.category}</td>
+        <td class="px-6 py-3 font-bold text-indigo-600 whitespace-nowrap" data-col="vendor">${task.vendor}</td>
+        <td class="px-6 py-3 font-bold text-slate-800" data-col="title">${task.title}</td>
+        <td class="px-6 py-3 whitespace-nowrap" data-col="status"><span class="px-2 py-1 rounded-md text-xs font-bold ${statusColor}">${task.status}</span></td>
+        <td class="px-6 py-3 font-bold text-blue-600 whitespace-nowrap" data-col="assignee">${task.assignee}</td>
+        <td class="px-6 py-3 max-w-[150px]" data-col="tags">${tagsHtml}</td> 
+        <td class="px-6 py-3 text-rose-500 font-medium text-sm whitespace-nowrap" data-col="deadline">${task.deadline || "-"}</td>
+        <td class="px-6 py-3 text-xs text-slate-400 whitespace-nowrap" data-col="lastupdate">${task.lastUpdate}</td>
+        <td class="px-6 py-3 text-slate-600 whitespace-nowrap hidden" data-col="contact">${task.contact}</td>
+        <td class="px-6 py-3 text-slate-400 text-xs whitespace-nowrap hidden" data-col="source">${task.source}</td>
+      </tr>
+    `;
+  });
+
+  applyFilter(); 
+}
+
+function sortTable(column) {
+  if (currentSortCol === column) {
+    currentSortAsc = !currentSortAsc;
+  } else {
+    currentSortCol = column;
+    currentSortAsc = true;
+  }
+  reapplySort();
+}
+
+function reapplySort() {
+  if (!currentSortCol) return;
+  const tbody = document.getElementById('taskTableBody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr.table-row-item'));
+  if (rows.length === 0) return;
+
+  const attr = 'sort' + currentSortCol.charAt(0).toUpperCase() + currentSortCol.slice(1);
+  const dir = currentSortAsc ? 1 : -1;
+  
+  rows.sort((a, b) => {
+    const va = (a.dataset[attr] || '').toString();
+    const vb = (b.dataset[attr] || '').toString();
+    
+    // 日期空白沉底
+    if (currentSortCol === 'deadline' || currentSortCol === 'lastupdate') {
+      if (va === "") return 1 * dir;
+      if (vb === "") return -1 * dir;
+    }
+    
+    if (va < vb) return -1 * dir;
+    if (va > vb) return 1 * dir;
+    return 0;
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+  updateSortArrows();
+}
+
+function updateSortArrows() {
+  document.querySelectorAll('.sort-arrow').forEach(el => {
+    const key = el.dataset.sortKey;
+    el.textContent = (key === currentSortCol) ? (currentSortAsc ? ' ▲' : ' ▼') : '';
+  });
+}
+
 function renderGanttChart(items) {
   const chart = document.getElementById("ganttChart");
   if (!chart) return;
@@ -786,7 +916,6 @@ function renderGanttChart(items) {
     return;
   }
 
-  // 將 "YYYY/MM/DD" 轉成 Date 物件（避免用 new Date(string) 造成時區誤差）
   const parseDate = (s) => {
     const [y, m, d] = s.split('/').map(Number);
     return new Date(y, (m || 1) - 1, d || 1);
@@ -807,7 +936,6 @@ function renderGanttChart(items) {
   let minDate = new Date(Math.min(today, ...dates));
   let maxDate = new Date(Math.max(today, ...dates));
 
-  // 前後各留 2 天緩衝，且至少涵蓋 14 天，畫面比較好看、不會擠成一團
   minDate.setDate(minDate.getDate() - 2);
   maxDate.setDate(maxDate.getDate() + 2);
   const minSpanDays = 14;
@@ -817,11 +945,10 @@ function renderGanttChart(items) {
   }
 
   const totalDays = Math.round((maxDate - minDate) / 86400000);
-  const dayWidth = 44; // 每一天的寬度(px)
+  const dayWidth = 44; 
   const chartWidth = totalDays * dayWidth;
-  const AXIS_BOTTOM = 22; // 軸線距離底部的高度，留給日期刻度文字
+  const AXIS_BOTTOM = 22; 
 
-  // 依「日期」分組，計算同一天內堆疊了幾個點(避免重疊)
   const laneMap = {};
   const sortedItems = [...items].sort((a, b) => parseDate(a.deadline) - parseDate(b.deadline));
 
@@ -865,7 +992,6 @@ function renderGanttChart(items) {
     `;
   });
 
-  // 畫軸線與日期刻度：天數多的話拉大標籤間距，避免擠在一起
   const labelStep = totalDays > 60 ? 7 : (totalDays > 24 ? 3 : 1);
   let axisHtml = `<div class="absolute" style="left:0; right:0; bottom:${AXIS_BOTTOM}px; width:${chartWidth}px; border-top:1px solid #e2e8f0;"></div>`;
 
@@ -883,7 +1009,6 @@ function renderGanttChart(items) {
     `;
   }
 
-  // 「今天」的垂直參考虛線
   const todayOffset = Math.round((today - minDate) / 86400000);
   if (todayOffset >= 0 && todayOffset <= totalDays) {
     const todayX = todayOffset * dayWidth + dayWidth / 2;
@@ -897,7 +1022,6 @@ function renderGanttChart(items) {
   chart.innerHTML = axisHtml + dotsHtml;
 }
 
-// 💡 期限時間軸的收合/展開（預設收合，需要時再展開，並記住使用者的選擇）
 function toggleGanttChart() {
   const wrapper = document.getElementById("ganttCollapseWrapper");
   const icon = document.getElementById("ganttToggleIcon");
@@ -909,7 +1033,7 @@ function toggleGanttChart() {
 }
 
 (function initGanttCollapseState() {
-  let collapsed = "1"; // 預設收合
+  let collapsed = "1"; 
   try { collapsed = localStorage.getItem("ganttCollapsed") || "1"; } catch (e) {}
   if (collapsed === "0") {
     const wrapper = document.getElementById("ganttCollapseWrapper");
@@ -919,26 +1043,19 @@ function toggleGanttChart() {
   }
 })();
 
-// 💡 通用的 HTML 逸出，避免使用者輸入的文字破壞版面或造成 XSS
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str == null ? "" : String(str);
   return div.innerHTML;
 }
 
-// ========================================================================
-// 💡 通用「自訂下拉選單」元件：取代原生 <select>，避免選單被瀏覽器貼在
-//    視窗最底部(甚至跟 Windows 工作列擠在一起)，改用頁面內的樣式卡片呈現
-// ========================================================================
 const comboStore = {};
-const comboFiltered = {}; // fieldId -> 目前「顯示中」項目對應回 comboStore 的原始 index 陣列
-const comboHighlight = {}; // fieldId -> 目前用鍵盤反白到第幾個(顯示中清單的 position)
+const comboFiltered = {}; 
+const comboHighlight = {}; 
 
-// 設定某個欄位的選項清單。options: [{ value, primary, secondary, tag }]
 function setComboOptions(fieldId, options) {
   comboStore[fieldId] = options || [];
   renderComboList(fieldId, "");
-  // 若目前已有值，重新對齊顯示文字(例如選項資料是之後才載入的情況)
   const current = document.getElementById(fieldId);
   if (current && current.value) setComboValue(fieldId, current.value);
 }
@@ -953,7 +1070,7 @@ function renderComboList(fieldId, query) {
     .filter(({ o }) => !q || `${o.primary} ${o.secondary || ""} ${o.tag || ""}`.toLowerCase().includes(q));
 
   comboFiltered[fieldId] = rows.map(r => r.idx);
-  comboHighlight[fieldId] = rows.length ? 0 : -1; // 預設反白第一筆，可以直接按 Enter 選取
+  comboHighlight[fieldId] = rows.length ? 0 : -1; 
 
   if (rows.length === 0) {
     list.innerHTML = '<div class="px-3 py-4 text-center text-xs text-slate-400">查無符合的資料</div>';
@@ -971,7 +1088,6 @@ function renderComboList(fieldId, query) {
   `).join('');
 }
 
-// 反白顯示中清單的第 pos 筆(滑鼠移入或鍵盤上下鍵都會呼叫這裡)
 function setComboHighlight(fieldId, pos) {
   const list = document.getElementById(fieldId + "_list");
   if (!list) return;
@@ -981,7 +1097,6 @@ function setComboHighlight(fieldId, pos) {
   });
 }
 
-// 鍵盤 ↑ / ↓：在目前顯示中的清單裡循環移動反白位置，並自動捲動到可視範圍內
 function moveComboHighlight(fieldId, delta) {
   const list = document.getElementById(fieldId + "_list");
   if (!list) return;
@@ -996,7 +1111,6 @@ function moveComboHighlight(fieldId, delta) {
   items[pos].scrollIntoView({ block: "nearest" });
 }
 
-// 按 Enter：選取目前反白的那一筆
 function selectComboHighlighted(fieldId) {
   const pos = comboHighlight[fieldId];
   const idxList = comboFiltered[fieldId] || [];
@@ -1004,7 +1118,6 @@ function selectComboHighlighted(fieldId) {
   selectCombo(fieldId, idxList[pos]);
 }
 
-// 搜尋框的鍵盤事件：↑↓ 移動反白、Enter 選取、Esc 關閉
 function handleComboKeydown(e, fieldId) {
   if (e.key === "ArrowDown") {
     e.preventDefault();
@@ -1044,7 +1157,6 @@ function selectCombo(fieldId, idx) {
   closeAllCombos();
 }
 
-// 讓程式可以像操作 <select> 一樣，用 .value 設定目前選取的值(例如打開編輯 Modal 時)
 function setComboValue(fieldId, value) {
   const input = document.getElementById(fieldId);
   if (input) input.value = value || "";
@@ -1065,7 +1177,6 @@ function toggleCombo(fieldId, btn) {
   panel.style.left = Math.max(8, rect.left) + "px";
   panel.style.width = Math.max(rect.width, 260) + "px";
 
-  // 動態判斷上下空間，空間不夠時自動往上展開，不會被畫面邊緣(或工作列)擋住
   const panelHeight = panel.offsetHeight || 280;
   const spaceBelow = window.innerHeight - rect.bottom;
   const spaceAbove = rect.top;
@@ -1088,17 +1199,11 @@ document.addEventListener("click", (e) => {
 });
 window.addEventListener("resize", closeAllCombos);
 document.addEventListener("scroll", (e) => {
-  // 💡 面板內部的滾動(滑鼠滾輪捲動清單)不應該把選單關掉，只有「頁面本身」捲動時才關閉
   const target = e.target;
   if (target && target.nodeType === 1 && target.closest(".combo-panel")) return;
   closeAllCombos();
 }, true);
 
-// ========================================================================
-// 💡 處理軌跡 (History Log) 美化渲染
-// ========================================================================
-
-// 幫某個狀態文字配色 + icon，讓時間軸的圓點與標籤顏色一致
 function logStatusColor(statusText) {
   const s = statusText || "";
   if (s.includes("結案")) return { dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-600", icon: "✅" };
@@ -1108,7 +1213,6 @@ function logStatusColor(statusText) {
   return { dot: "bg-slate-300", badge: "", icon: "" };
 }
 
-// 把 Google Sheets 存的原始 LOG 字串，拆解成一筆一筆的紀錄物件
 function parseHistoryLog(rawLog) {
   if (!rawLog) return [];
   const lines = rawLog.split('\n').map(l => l.trim()).filter(Boolean);
@@ -1147,10 +1251,9 @@ function parseHistoryLog(rawLog) {
     e.badge = badge;
   });
 
-  return entries.reverse(); // 新到舊
+  return entries.reverse(); 
 }
 
-// 把處理歷程渲染成漂亮的時間軸（圓點 + 時間 + 說明 + 狀態標籤）
 function renderHistoryLog(rawLog) {
   const container = document.getElementById("detailLogList");
   const countEl = document.getElementById("detailLogCount");
@@ -1191,29 +1294,24 @@ function renderHistoryLog(rawLog) {
   }).join('');
 }
 
-// 儲存目前正在編輯的列數與歷史紀錄
-let currentEditingRow = null;
-let currentEditingLog = "";
-let currentEditingOriginalStatus = ""; // 💡 記住打開 Modal 當下的狀態，用來組出「A → B」的變更紀錄
-
-// 🟢 點擊「✏️ 處理」按鈕時：打開 Modal 並把資料塞進去
-function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, contactEnc, sourceEnc, deadlineEnc, assigneeEnc) {
+// 💡 打開編輯 Modal，並將標題與 Google Task ID 寫入記憶變數
+function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, contactEnc, sourceEnc, deadlineEnc, assigneeEnc, titleEnc, taskIdEnc) {
   currentEditingRow = rowIndex;
   currentEditingLog = decodeURIComponent(logEnc);
   currentEditingOriginalStatus = status;
+  currentEditingTitle = titleEnc ? decodeURIComponent(titleEnc) : "";
+  currentEditingTaskId = taskIdEnc ? decodeURIComponent(taskIdEnc) : "";
   
   document.getElementById("detailStatus").value = status;
   document.getElementById("detailNote").value = ""; 
   document.getElementById("detailTags").value = tagsEnc ? decodeURIComponent(tagsEnc) : ""; 
   
-  // 💡 寫入新欄位
   document.getElementById("detailCategory").value = decodeURIComponent(catEnc);
   document.getElementById("detailVendor").value = decodeURIComponent(vendorEnc);
   setComboValue("detailContact", decodeURIComponent(contactEnc));
   document.getElementById("detailSource").value = decodeURIComponent(sourceEnc);
- document.getElementById("detailAssignee").value = decodeURIComponent(assigneeEnc);
+  document.getElementById("detailAssignee").value = decodeURIComponent(assigneeEnc);
   
-  // 處理日期格式 (HTML input type="date" 需要 YYYY-MM-DD)
   const dl = decodeURIComponent(deadlineEnc);
   document.getElementById("detailDeadline").value = dl ? dl.replace(/\//g, '-') : "";
   
@@ -1221,14 +1319,15 @@ function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, co
   document.getElementById("taskDetailModal").classList.remove("hidden");
 }
 
-// 🔴 關閉 Modal
 function closeTaskDetailModal() {
   document.getElementById("taskDetailModal").classList.add("hidden");
   currentEditingRow = null;
   currentEditingLog = "";
+  currentEditingTitle = "";
+  currentEditingTaskId = "";
 }
 
-// 💾 點擊 Modal 內的「儲存變更」按鈕
+// 儲存編輯變更 (含更新 Google Task)
 document.getElementById("saveDetailBtn").addEventListener("click", async () => {
   if (!currentEditingRow) return;
   
@@ -1243,35 +1342,36 @@ document.getElementById("saveDetailBtn").addEventListener("click", async () => {
   let newDeadline = document.getElementById("detailDeadline").value;
   if (newDeadline) newDeadline = newDeadline.replace(/-/g, '/');
   
-  // 💡 確保處理人也有被抓取到
   const newAssignee = document.getElementById("detailAssignee").value; 
   
   const btn = document.getElementById("saveDetailBtn");
-  const originalText = btn.textContent;
   btn.textContent = "儲存中...";
   btn.disabled = true;
 
-  // 呼叫更新 API (將所有參數傳入)
-  await updateTaskDetailAPI(currentEditingRow, newStatus, currentEditingOriginalStatus, note, currentEditingLog, tags, newCat, newVendor, newContact, newSource, newDeadline, newAssignee);
+  await updateTaskDetailAPI(currentEditingRow, newStatus, currentEditingOriginalStatus, note, currentEditingLog, tags, newCat, newVendor, newContact, newSource, newDeadline, newAssignee, currentEditingTitle, currentEditingTaskId);
   
-  btn.textContent = originalText;
+  btn.textContent = "儲存變更";
   btn.disabled = false;
   closeTaskDetailModal();
 });
 
-// ⚙️ 核心 API：將狀態、說明、新 LOG 寫回 Google Sheets
-async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, currentLog, tags, category, vendor, contact, source, deadline, assignee) {
+// 更新細節 API (寫回 Google Sheets + 同步 Google Task)
+async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, currentLog, tags, category, vendor, contact, source, deadline, assignee, title, taskId) {
   try {
     const now = new Date();
     const timeString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
     
-    // 💡 組出「狀態變更：A → B」的敘述，沒改變狀態則寫「狀態確認：A → A」，方便統一解析、上色
+    // 💡 同步更新到 Google Tasks
+    const displayTitle = category ? `[${category}] ${title}` : title;
+    const newTaskId = await syncGoogleTask(taskId, displayTitle, note, deadline, newStatus);
+
     const fromStatus = oldStatus || newStatus;
     const changeLabel = (fromStatus !== newStatus) ? "狀態變更" : "狀態確認";
     let newLogEntry = `[${timeString}] ${changeLabel}：${fromStatus} → ${newStatus}`;
     if (note) newLogEntry += `。備註：${note}`;
     const updatedLog = currentLog ? `${currentLog}\n\n${newLogEntry}` : newLogEntry;
 
+    // 💡 batchUpdate 加入 N 欄更新
     const body = {
       valueInputOption: "USER_ENTERED",
       data: [
@@ -1279,7 +1379,8 @@ async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, current
         { range: `案件總表!B${rowIndex}:D${rowIndex}`, values: [[category, contact, source]] }, 
         { range: `案件總表!G${rowIndex}`, values: [[deadline]] }, 
         { range: `案件總表!I${rowIndex}:L${rowIndex}`, values: [[timeString, updatedLog, tags, vendor]] }, 
-        { range: `案件總表!M${rowIndex}`, values: [[assignee]] } 
+        { range: `案件總表!M${rowIndex}`, values: [[assignee]] },
+        { range: `案件總表!N${rowIndex}`, values: [[newTaskId]] } 
       ]
     };
 
@@ -1305,29 +1406,27 @@ async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, current
   }
 }
   
-// ⚠️ 保留原本的刪除功能 (只需微調傳遞給 API 的方式)
-async function deleteTask(rowIndex, logEncoded) {
+// 刪除按鈕
+async function deleteTask(rowIndex, logEncoded, taskIdEnc) {
   const confirmDelete = confirm("⚠️ 確定要刪除這筆案件嗎？\n(案件將會被標記為「已作廢」並從列表中隱藏)");
   if (!confirmDelete) return;
   
-  // 刪除時不加說明，直接呼叫更新 API，狀態改為已作廢
-  await updateSheetData(rowIndex, "已作廢", decodeURIComponent(logEncoded));
+  const taskId = decodeURIComponent(taskIdEnc);
+  await updateSheetData(rowIndex, "已作廢", decodeURIComponent(logEncoded), taskId);
 }
 
-
-// ⚙️ 核心 API 呼叫：負責把更新的狀態、時間、日誌寫回 Google Sheets
-async function updateSheetData(rowIndex, newStatus, currentLog) {
+// 更新為已作廢 (連動 Google Tasks 完成狀態)
+async function updateSheetData(rowIndex, newStatus, currentLog, taskId) {
   try {
-    // 1. 產生當下的時間戳記
     const now = new Date();
     const timeString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
     
-    // 2. 組合處理歷程紀錄
+    // 💡 同步將 Google Task 標記為完成
+    await syncGoogleTask(taskId, null, null, null, "已作廢");
+
     const newLogEntry = `[${timeString}] 案件刪除（狀態變更：已作廢）`;
     const updatedLog = currentLog ? `${currentLog}\n${newLogEntry}` : newLogEntry;
 
-    // 3. 打包要更新的資料 (使用 batchUpdate 可以一次更新多個不連續的欄位)
-    // 我們要更新：A欄(狀態)、I欄(最後更新時間)、J欄(處理歷程)
     const body = {
       valueInputOption: "USER_ENTERED",
       data: [
@@ -1336,7 +1435,6 @@ async function updateSheetData(rowIndex, newStatus, currentLog) {
       ]
     };
 
-    // 4. 發送請求給 Google Sheets
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`, {
       method: "POST",
       headers: {
@@ -1348,7 +1446,7 @@ async function updateSheetData(rowIndex, newStatus, currentLog) {
 
     if (response.ok) {
       alert("✅ 案件狀態更新成功！");
-      loadTasksFromSheets(); // 重新載入畫面，讓畫面立刻反映最新結果
+      loadTasksFromSheets(); 
     } else {
       const err = await response.json();
       alert("❌ 更新失敗：" + err.error.message);
@@ -1359,10 +1457,9 @@ async function updateSheetData(rowIndex, newStatus, currentLog) {
   }
 }
 
-// 🔍 核心功能：統一的篩選引擎 —— 儀表板卡片、下拉勾選、標籤點選，三者會「同時」套用，
-//    而不是互相覆蓋掉對方的篩選結果(這正是先前 A/B/C 互相打架、看起來沒反應的原因)
-let dashboardFilter = null;   // '急件' | '待處理' | '進行中' | '卡關' | null
-let activeTagFilter = null;   // 目前點選中的標籤文字，或 null
+// 以下為所有篩選與介面切換邏輯 (維持不變)
+let dashboardFilter = null;
+let activeTagFilter = null;
 
 function applyFilter() {
   const checkedStatuses = Array.from(document.querySelectorAll('.filter-status-cb:checked')).map(cb => cb.value);
@@ -1370,12 +1467,10 @@ function applyFilter() {
   const checkedVendors = Array.from(document.querySelectorAll('.filter-vendor-cb:checked')).map(cb => cb.value);
   const checkedAssignees = Array.from(document.querySelectorAll('.filter-assignee-cb:checked')).map(cb => cb.value);
 
-  const rows = document.querySelectorAll("#taskTableBody tr");
+  const rows = document.querySelectorAll("#taskTableBody tr.table-row-item");
 
   rows.forEach(row => {
-    // 💡 改用資料列上的 data-* 屬性判斷，不再依賴欄位順序(td:nth-child)，
-    //    這樣以後不管怎麼調欄位順序或隱藏欄位，篩選邏輯都不會壞掉
-    if (!row.dataset || row.dataset.status === undefined) return; // 跳過「無資料」提示列
+    if (!row.dataset || row.dataset.status === undefined) return;
 
     const statusText = row.dataset.status || "";
     const categoryText = row.dataset.sortCategory || "";
@@ -1400,14 +1495,12 @@ function applyFilter() {
   });
 }
 
-// 點擊儀表板卡片：再點一次同一張卡片會取消篩選；會跟下拉篩選、標籤篩選「一起」套用
 function filterByDashboard(type) {
   dashboardFilter = (dashboardFilter === type) ? null : type;
   updateDashboardCardActiveState();
   applyFilter();
 }
 
-// 讓目前作用中的儀表板卡片有明顯的選取樣式
 function updateDashboardCardActiveState() {
   document.querySelectorAll('.dashboard-card').forEach(card => {
     const isActive = dashboardFilter && card.dataset.dashboardType === dashboardFilter;
@@ -1417,7 +1510,6 @@ function updateDashboardCardActiveState() {
   });
 }
 
-// 點擊標籤：篩選出擁有相同標籤的案件；再點一次同一個標籤會取消篩選
 function filterByTag(encTag) {
   const tag = decodeURIComponent(encTag);
   activeTagFilter = (activeTagFilter === tag) ? null : tag;
@@ -1445,52 +1537,6 @@ function updateTagFilterBanner() {
   }
 }
 
-// ========================================================================
-// 💡 欄位排序：點擊表頭即可依該欄位排序，再點一次可切換升冪/降冪
-// ========================================================================
-let currentSort = { key: null, dir: 1 }; // dir: 1=升冪, -1=降冪
-
-function sortTable(key) {
-  if (currentSort.key === key) {
-    currentSort.dir *= -1;
-  } else {
-    currentSort.key = key;
-    currentSort.dir = 1;
-  }
-  reapplySort();
-}
-
-// 用目前的排序狀態重新排一次(資料重新載入、或篩選後都會呼叫這裡，維持排序結果)
-function reapplySort() {
-  if (!currentSort.key) return;
-  const tbody = document.getElementById('taskTableBody');
-  if (!tbody) return;
-  const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.dataset && r.dataset.status !== undefined);
-  if (rows.length === 0) return;
-
-  const attr = 'sort' + currentSort.key.charAt(0).toUpperCase() + currentSort.key.slice(1);
-  rows.sort((a, b) => {
-    const va = (a.dataset[attr] || '').toString();
-    const vb = (b.dataset[attr] || '').toString();
-    if (va < vb) return -1 * currentSort.dir;
-    if (va > vb) return 1 * currentSort.dir;
-    return 0;
-  });
-
-  rows.forEach(r => tbody.appendChild(r));
-  updateSortArrows();
-}
-
-function updateSortArrows() {
-  document.querySelectorAll('.sort-arrow').forEach(el => {
-    const key = el.dataset.sortKey;
-    el.textContent = (key === currentSort.key) ? (currentSort.dir === 1 ? ' ▲' : ' ▼') : '';
-  });
-}
-
-// ========================================================================
-// 💡 欄位顯示/隱藏：「更多欄位」選單
-// ========================================================================
 function toggleColumnMenu() {
   const menu = document.getElementById('columnMenu');
   if (menu) menu.classList.toggle('hidden');
@@ -1509,9 +1555,7 @@ document.addEventListener('click', (e) => {
   if (wrap && menu && !wrap.contains(e.target)) menu.classList.add('hidden');
 });
 
-// 1. 打開或關閉指定的下拉選單
 function toggleDropdown(menuId) {
-  // 先把其他所有選單關掉，再切換點擊的這個
   const allMenus = ['statusMenu', 'categoryMenu', 'vendorMenu', 'assigneeMenu'];
   allMenus.forEach(id => {
     if (id !== menuId) document.getElementById(id).classList.add('hidden');
@@ -1519,7 +1563,6 @@ function toggleDropdown(menuId) {
   document.getElementById(menuId).classList.toggle('hidden');
 }
 
-// 2. 通用的：更新按鈕上的「已選數量」文字
 function updateDropdownBtn(type, labelName) {
   const checkboxes = document.querySelectorAll(`.filter-${type}-cb`);
   const checkedBoxes = document.querySelectorAll(`.filter-${type}-cb:checked`);
@@ -1534,7 +1577,6 @@ function updateDropdownBtn(type, labelName) {
   }
 }
 
-// 3. 通用的：全選 / 清除功能
 function selectAllOptions(type, labelName) {
   const checkboxes = document.querySelectorAll(`.filter-${type}-cb`);
   const allChecked = Array.from(checkboxes).every(cb => cb.checked);
@@ -1544,13 +1586,11 @@ function selectAllOptions(type, labelName) {
   applyFilter();
 }
 
-// 4. 點擊網頁其他空白處，自動收起所有下拉選單
 document.addEventListener('click', function(event) {
   const dropdowns = ['status', 'category', 'vendor', 'assignee'];
   dropdowns.forEach(type => {
     const wrap = document.getElementById(`${type}Dropdown`);
     const menu = document.getElementById(`${type}Menu`);
-    // 如果點擊的地方不在該選單範圍內，就把它隱藏
     if (wrap && !wrap.contains(event.target)) {
       menu.classList.add('hidden');
     }
