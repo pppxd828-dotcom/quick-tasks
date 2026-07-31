@@ -59,28 +59,28 @@
 
   <!-- 四大狀態卡片 (儀表板) -->
   <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-    <div onclick="filterByDashboard('急件')" class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
+    <div onclick="filterByDashboard('急件')" data-dashboard-type="急件" class="dashboard-card cursor-pointer bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4 transition hover:border-slate-300">
       <div class="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 text-2xl">🚨</div>
       <div>
         <p class="text-sm text-slate-500 font-bold">今日急件</p>
         <p id="countUrgent" class="text-2xl font-black text-slate-700">0</p>
       </div>
     </div>
-    <div onclick="filterByDashboard('待處理')" class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
+    <div onclick="filterByDashboard('待處理')" data-dashboard-type="待處理" class="dashboard-card cursor-pointer bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4 transition hover:border-slate-300">
       <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 text-2xl">📥</div>
       <div>
         <p class="text-sm text-slate-500 font-bold">待處理清單</p>
         <p id="countTodo" class="text-2xl font-black text-slate-700">0</p>
       </div>
     </div>
-    <div onclick="filterByDashboard('進行中')" class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
+    <div onclick="filterByDashboard('進行中')" data-dashboard-type="進行中" class="dashboard-card cursor-pointer bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4 transition hover:border-slate-300">
       <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-2xl">🏃</div>
       <div>
         <p class="text-sm text-slate-500 font-bold">處理/盤點中</p>
         <p id="countDoing" class="text-2xl font-black text-slate-700">0</p>
       </div>
     </div>
-    <div onclick="filterByDashboard('卡關')" class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4">
+    <div onclick="filterByDashboard('卡關')" data-dashboard-type="卡關" class="dashboard-card cursor-pointer bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center gap-4 transition hover:border-slate-300">
       <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 text-2xl">🤝</div>
       <div>
         <p class="text-sm text-slate-500 font-bold">卡關/等回覆</p>
@@ -88,6 +88,7 @@
       </div>
     </div>
   </section>
+
 
   <!-- 案件資料表區域 -->
   <section class="bg-white rounded-xl shadow-sm border border-slate-200">
@@ -1358,57 +1359,155 @@ async function updateSheetData(rowIndex, newStatus, currentLog) {
   }
 }
 
-// 🔍 核心功能：根據多重核取方塊過濾表格內容
-// 🔍 核心功能：根據下拉選單過濾表格內容
+// 🔍 核心功能：統一的篩選引擎 —— 儀表板卡片、下拉勾選、標籤點選，三者會「同時」套用，
+//    而不是互相覆蓋掉對方的篩選結果(這正是先前 A/B/C 互相打架、看起來沒反應的原因)
+let dashboardFilter = null;   // '急件' | '待處理' | '進行中' | '卡關' | null
+let activeTagFilter = null;   // 目前點選中的標籤文字，或 null
+
 function applyFilter() {
-   const checkedStatuses = Array.from(document.querySelectorAll('.filter-status-cb:checked')).map(cb => cb.value);
-  const filterCategory = document.getElementById('filterCategory').value;
-  const filterVendor = document.getElementById('filterVendor').value;
-  const filterAssignee = document.getElementById('filterAssignee').value;
- 
+  const checkedStatuses = Array.from(document.querySelectorAll('.filter-status-cb:checked')).map(cb => cb.value);
+  const checkedCategories = Array.from(document.querySelectorAll('.filter-category-cb:checked')).map(cb => cb.value);
+  const checkedVendors = Array.from(document.querySelectorAll('.filter-vendor-cb:checked')).map(cb => cb.value);
+  const checkedAssignees = Array.from(document.querySelectorAll('.filter-assignee-cb:checked')).map(cb => cb.value);
+
   const rows = document.querySelectorAll("#taskTableBody tr");
 
   rows.forEach(row => {
-    if (row.innerText.includes("目前沒有任何案件")) return;
+    // 💡 改用資料列上的 data-* 屬性判斷，不再依賴欄位順序(td:nth-child)，
+    //    這樣以後不管怎麼調欄位順序或隱藏欄位，篩選邏輯都不會壞掉
+    if (!row.dataset || row.dataset.status === undefined) return; // 跳過「無資料」提示列
 
-    // 抓取各欄位的文字 (根據 HTML th 排列順序：第1欄狀態, 第2欄類別, 第3欄廠商, 第5欄處理人)
-    const statusText = row.querySelector("td:nth-child(1) span").textContent;
-    const categoryText = row.querySelector("td:nth-child(2)").textContent;
-    const vendorText = row.querySelector("td:nth-child(3)").textContent; 
-    const assigneeText = row.querySelector("td:nth-child(5)").textContent; 
+    const statusText = row.dataset.status || "";
+    const categoryText = row.dataset.sortCategory || "";
+    const vendorText = row.dataset.sortVendor || "";
+    const assigneeText = row.dataset.sortAssignee || "";
+    const tagsText = row.dataset.sortTags || "";
+    const isUrgent = row.dataset.urgent === 'yes';
 
-    // 判斷邏輯：如果是「全部」，代表該條件過關；否則文字必須包含選擇的字眼
-    const matchStatus = checkedStatuses.some(status => statusText.includes(status));
-    const matchCategory = (filterCategory === "全部") || (categoryText === filterCategory);
-    const matchVendor = (filterVendor === "全部") || (vendorText === filterVendor);
-    const matchAssignee = (filterAssignee === "全部") || (assigneeText === filterAssignee);
+    const matchStatus = checkedStatuses.some(s => statusText.includes(s));
+    const matchCategory = checkedCategories.includes(categoryText);
+    const matchVendor = checkedVendors.includes(vendorText);
+    const matchAssignee = checkedAssignees.includes(assigneeText);
+    const matchTag = !activeTagFilter || tagsText.split(',').map(t => t.trim()).includes(activeTagFilter);
 
-    // 四個條件都必須符合才顯示
-    if (matchStatus && matchCategory && matchVendor && matchAssignee) {
-      row.style.display = ""; 
-    } else {
-      row.style.display = "none"; 
-    }
+    let matchDashboard = true;
+    if (dashboardFilter === '急件') matchDashboard = isUrgent;
+    else if (dashboardFilter === '待處理') matchDashboard = statusText.includes('待處理');
+    else if (dashboardFilter === '進行中') matchDashboard = statusText.includes('進行中');
+    else if (dashboardFilter === '卡關') matchDashboard = statusText.includes('卡關') || statusText.includes('等回覆');
+
+    row.style.display = (matchStatus && matchCategory && matchVendor && matchAssignee && matchTag && matchDashboard) ? "" : "none";
   });
 }
-  
-// 點擊儀表板時觸發的過濾器
+
+// 點擊儀表板卡片：再點一次同一張卡片會取消篩選；會跟下拉篩選、標籤篩選「一起」套用
 function filterByDashboard(type) {
-  const rows = document.querySelectorAll("#taskTableBody tr");
-  
-  rows.forEach(row => {
-    if (row.innerText.includes("目前沒有任何案件")) return;
-    
-    const status = row.getAttribute("data-status");
-    const isUrgent = row.getAttribute("data-urgent");
-    
-    if (type === '急件' && isUrgent === 'yes') row.style.display = "";
-    else if (type === '待處理' && status.includes('待處理')) row.style.display = "";
-    else if (type === '進行中' && status.includes('進行中')) row.style.display = "";
-    else if (type === '卡關' && (status.includes('卡關') || status.includes('等回覆'))) row.style.display = "";
-    else row.style.display = "none";
+  dashboardFilter = (dashboardFilter === type) ? null : type;
+  updateDashboardCardActiveState();
+  applyFilter();
+}
+
+// 讓目前作用中的儀表板卡片有明顯的選取樣式
+function updateDashboardCardActiveState() {
+  document.querySelectorAll('.dashboard-card').forEach(card => {
+    const isActive = dashboardFilter && card.dataset.dashboardType === dashboardFilter;
+    card.classList.toggle('ring-2', !!isActive);
+    card.classList.toggle('ring-blue-400', !!isActive);
+    card.classList.toggle('bg-blue-50', !!isActive);
   });
 }
+
+// 點擊標籤：篩選出擁有相同標籤的案件；再點一次同一個標籤會取消篩選
+function filterByTag(encTag) {
+  const tag = decodeURIComponent(encTag);
+  activeTagFilter = (activeTagFilter === tag) ? null : tag;
+  updateTagFilterBanner();
+  applyFilter();
+}
+
+function clearTagFilter() {
+  activeTagFilter = null;
+  updateTagFilterBanner();
+  applyFilter();
+}
+
+function updateTagFilterBanner() {
+  const banner = document.getElementById("tagFilterBanner");
+  const label = document.getElementById("tagFilterLabel");
+  if (!banner) return;
+  if (activeTagFilter) {
+    if (label) label.textContent = activeTagFilter;
+    banner.classList.remove("hidden");
+    banner.classList.add("flex");
+  } else {
+    banner.classList.add("hidden");
+    banner.classList.remove("flex");
+  }
+}
+
+// ========================================================================
+// 💡 欄位排序：點擊表頭即可依該欄位排序，再點一次可切換升冪/降冪
+// ========================================================================
+let currentSort = { key: null, dir: 1 }; // dir: 1=升冪, -1=降冪
+
+function sortTable(key) {
+  if (currentSort.key === key) {
+    currentSort.dir *= -1;
+  } else {
+    currentSort.key = key;
+    currentSort.dir = 1;
+  }
+  reapplySort();
+}
+
+// 用目前的排序狀態重新排一次(資料重新載入、或篩選後都會呼叫這裡，維持排序結果)
+function reapplySort() {
+  if (!currentSort.key) return;
+  const tbody = document.getElementById('taskTableBody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.dataset && r.dataset.status !== undefined);
+  if (rows.length === 0) return;
+
+  const attr = 'sort' + currentSort.key.charAt(0).toUpperCase() + currentSort.key.slice(1);
+  rows.sort((a, b) => {
+    const va = (a.dataset[attr] || '').toString();
+    const vb = (b.dataset[attr] || '').toString();
+    if (va < vb) return -1 * currentSort.dir;
+    if (va > vb) return 1 * currentSort.dir;
+    return 0;
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+  updateSortArrows();
+}
+
+function updateSortArrows() {
+  document.querySelectorAll('.sort-arrow').forEach(el => {
+    const key = el.dataset.sortKey;
+    el.textContent = (key === currentSort.key) ? (currentSort.dir === 1 ? ' ▲' : ' ▼') : '';
+  });
+}
+
+// ========================================================================
+// 💡 欄位顯示/隱藏：「更多欄位」選單
+// ========================================================================
+function toggleColumnMenu() {
+  const menu = document.getElementById('columnMenu');
+  if (menu) menu.classList.toggle('hidden');
+}
+
+function toggleColumn(colKey, checkbox) {
+  const show = checkbox.checked;
+  document.querySelectorAll(`[data-col="${colKey}"]`).forEach(el => {
+    el.classList.toggle('hidden', !show);
+  });
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('columnToggleDropdown');
+  const menu = document.getElementById('columnMenu');
+  if (wrap && menu && !wrap.contains(e.target)) menu.classList.add('hidden');
+});
 
 // 1. 打開或關閉指定的下拉選單
 function toggleDropdown(menuId) {
@@ -1457,39 +1556,6 @@ document.addEventListener('click', function(event) {
     }
   });
 });
-
-// 🔍 5. 更新為支援四組陣列的 applyFilter
-function applyFilter() {
-  // 抓取四大過濾器中「有被打勾」的值，存成陣列
-  const checkedStatuses = Array.from(document.querySelectorAll('.filter-status-cb:checked')).map(cb => cb.value);
-  const checkedCategories = Array.from(document.querySelectorAll('.filter-category-cb:checked')).map(cb => cb.value);
-  const checkedVendors = Array.from(document.querySelectorAll('.filter-vendor-cb:checked')).map(cb => cb.value);
-  const checkedAssignees = Array.from(document.querySelectorAll('.filter-assignee-cb:checked')).map(cb => cb.value);
-
-  const rows = document.querySelectorAll("#taskTableBody tr");
-
-  rows.forEach(row => {
-    if (row.innerText.includes("目前沒有任何案件")) return;
-
-    const statusText = row.querySelector("td:nth-child(1) span").textContent;
-    const categoryText = row.querySelector("td:nth-child(2)").textContent;
-    const vendorText = row.querySelector("td:nth-child(3)").textContent; 
-    const assigneeText = row.querySelector("td:nth-child(5)").textContent; 
-
-    // 比對文字是否存在於被勾選的陣列中
-    const matchStatus = checkedStatuses.some(status => statusText.includes(status));
-    const matchCategory = checkedCategories.includes(categoryText);
-    const matchVendor = checkedVendors.includes(vendorText);
-    const matchAssignee = checkedAssignees.includes(assigneeText);
-
-    // 四個條件都符合才顯示
-    if (matchStatus && matchCategory && matchVendor && matchAssignee) {
-      row.style.display = ""; 
-    } else {
-      row.style.display = "none"; 
-    }
-  });
-}
 </script>
 </body>
 </html>
