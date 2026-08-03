@@ -99,7 +99,7 @@
         <!-- 1. 狀態篩選 -->
         <div class="relative" id="statusDropdown">
           <button onclick="toggleDropdown('statusMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
-            <span id="statusBtnText">狀態 (全部)</span>
+            <span id="statusBtnText">狀態 (已選 4)</span>
             <span class="text-slate-400 text-xs">▼</span>
           </button>
           <div id="statusMenu" class="hidden absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1">
@@ -112,7 +112,7 @@
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="進行中" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">進行中</span></label>
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="卡關" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-bold">卡關</span></label>
               <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="等回覆" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-bold">等回覆</span></label>
-              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="結案" class="filter-status-cb w-4 h-4 rounded text-blue-600" checked onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold">結案</span></label>
+              <label class="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" value="結案" class="filter-status-cb w-4 h-4 rounded text-blue-600" onchange="updateDropdownBtn('status', '狀態'); applyFilter()"><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold">結案</span></label>
             </div>
           </div>
         </div>
