@@ -96,6 +96,11 @@
     <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
       <!-- 篩選器群組 -->
       <div class="flex flex-wrap items-center gap-3">
+        <!-- 0. 任務摘要關鍵字搜尋 -->
+        <div class="relative">
+          <input type="text" id="titleSearchInput" placeholder="🔍 搜尋任務摘要關鍵字..." oninput="applyFilter()" class="w-52 border border-slate-300 rounded-lg pl-3 pr-7 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+          <button type="button" onclick="document.getElementById('titleSearchInput').value=''; applyFilter();" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-rose-500 text-xs" title="清除搜尋">✕</button>
+        </div>
         <!-- 1. 狀態篩選 -->
         <div class="relative" id="statusDropdown">
           <button onclick="toggleDropdown('statusMenu')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white flex justify-between items-center w-40 hover:bg-slate-50 transition">
@@ -2016,6 +2021,9 @@ function applyFilter() {
   const checkedCategories = Array.from(document.querySelectorAll('.filter-category-cb:checked')).map(cb => cb.value);
   const checkedVendors = Array.from(document.querySelectorAll('.filter-vendor-cb:checked')).map(cb => cb.value);
   const checkedAssignees = Array.from(document.querySelectorAll('.filter-assignee-cb:checked')).map(cb => cb.value);
+  // 💡 任務摘要關鍵字模糊比對(不分大小寫)
+  const titleSearchEl = document.getElementById('titleSearchInput');
+  const titleKeyword = titleSearchEl ? titleSearchEl.value.trim().toLowerCase() : "";
 
   const rows = document.querySelectorAll("#taskTableBody tr.table-row-item");
 
@@ -2027,6 +2035,7 @@ function applyFilter() {
     const vendorText = row.dataset.sortVendor || "";
     const assigneeText = row.dataset.sortAssignee || "";
     const tagsText = row.dataset.sortTags || "";
+    const titleText = row.dataset.sortTitle || "";
     const isUrgent = row.dataset.urgent === 'yes';
 
     const matchStatus = checkedStatuses.some(s => statusText.includes(s));
@@ -2034,6 +2043,7 @@ function applyFilter() {
     const matchVendor = checkedVendors.includes(vendorText);
     const matchAssignee = checkedAssignees.includes(assigneeText);
     const matchTag = !activeTagFilter || tagsText.split(',').map(t => t.trim()).includes(activeTagFilter);
+    const matchTitle = !titleKeyword || titleText.toLowerCase().includes(titleKeyword);
 
     let matchDashboard = true;
     if (dashboardFilter === '急件') matchDashboard = isUrgent;
@@ -2041,7 +2051,7 @@ function applyFilter() {
     else if (dashboardFilter === '進行中') matchDashboard = statusText.includes('進行中');
     else if (dashboardFilter === '卡關') matchDashboard = statusText.includes('卡關') || statusText.includes('等回覆');
 
-    row.style.display = (matchStatus && matchCategory && matchVendor && matchAssignee && matchTag && matchDashboard) ? "" : "none";
+    row.style.display = (matchStatus && matchCategory && matchVendor && matchAssignee && matchTag && matchTitle && matchDashboard) ? "" : "none";
   });
 }
 
