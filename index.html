@@ -295,6 +295,19 @@
         <label class="block text-xs font-bold text-slate-500 mb-1">詳細說明與網址</label>
         <textarea id="taskDetails" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="貼上表單連結、錯誤訊息或備註..."></textarea>
       </div>
+
+      <!-- 💡 子項目清單：一個案件可以拆成好幾個小部分，有期限的會自動同步到 Google Tasks -->
+      <div class="col-span-2 bg-slate-50 border border-slate-200 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <label class="text-xs font-bold text-slate-600">✅ 子項目清單 (選填，可拆成好幾個小部分)</label>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="openTemplatePicker()" class="text-xs text-purple-600 hover:text-purple-800 font-bold">📋 套用範本</button>
+            <button type="button" onclick="promptSaveTemplate()" class="text-xs text-blue-600 hover:text-blue-800 font-bold">💾 另存為範本</button>
+          </div>
+        </div>
+        <div id="subtaskRows" class="space-y-2"></div>
+        <button type="button" onclick="addSubtaskRow()" class="mt-2 text-xs text-slate-500 hover:text-slate-700 font-bold">＋ 新增子項目</button>
+      </div>
     </div>
     <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
       <button id="cancelBtn" class="px-4 py-2 rounded-lg text-slate-600 font-bold hover:bg-slate-200 text-sm transition">取消</button>
@@ -371,7 +384,20 @@
         <label class="block text-sm font-bold text-slate-700 mb-2">🏷️ 案件標籤 (多個標籤請用半形逗號 , 分隔)</label>
         <input type="text" id="detailTags" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 placeholder-slate-400" placeholder="例如：VIP, 需要報價, 跨部門">
       </div>
-      
+
+      <!-- 💡 子項目清單 -->
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-2">✅ 子項目清單</label>
+        <div id="detailSubtaskList" class="space-y-1 mb-2">
+          <div class="text-center text-xs text-slate-400 py-3">載入中...</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="text" id="detailSubtaskNewContent" placeholder="新增子項目內容..." class="flex-1 border border-slate-200 rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+          <input type="date" id="detailSubtaskNewDeadline" class="border border-slate-200 rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 w-36">
+          <button type="button" onclick="addSubtaskFromDetailModal()" class="text-xs font-bold text-blue-600 hover:text-blue-800 px-2 whitespace-nowrap">＋ 新增</button>
+        </div>
+      </div>
+
       <!-- 💡 執行說明與子任務區域 -->
       <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
         <label class="block text-sm font-bold text-blue-800 mb-2">💬 新增執行說明 (選填)</label>
@@ -402,6 +428,19 @@
   </div>
 </div>
 
+<!-- 💡 範本選擇 Modal -->
+<div id="templatePickerModal" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[60] p-4">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[80vh]">
+    <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+      <h3 class="font-bold text-slate-800">📋 選擇範本</h3>
+      <button onclick="closeTemplatePicker()" class="text-slate-400 hover:text-rose-500 transition text-xl font-bold">&times;</button>
+    </div>
+    <div id="templatePickerList" class="p-3 overflow-y-auto space-y-1">
+      <div class="text-center text-xs text-slate-400 py-6">載入中...</div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* === Google API 憑證 === */
 const CLIENT_ID = "370645265767-phukpstpp7prf0ioh2tt6khc6dchk015.apps.googleusercontent.com";
@@ -424,8 +463,18 @@ let currentEditingOriginalStatus = "";
 let currentEditingTitle = "";   
 let currentEditingTaskId = "";  
 
+// 💡 子項目清單 / 範本功能：需要在 Google Sheets 中額外建立兩個工作表
+//    1. 「子項目清單」：欄位為 A案件ID | B內容 | C期限 | D完成 | E建立時間
+//    2. 「範本清單」：欄位為 A範本名稱 | B項目內容 | C期限天數
+const SUBTASK_SHEET = "子項目清單";
+const TEMPLATE_SHEET = "範本清單";
+
+let templatesCache = {};      // { 範本名稱: [{content, days}] }
+let currentSubtasksCache = []; // 目前「案件處理」Modal 中，這個案件底下的子項目 (含 rowIndex)
+let subtaskRowSeq = 0;         // 新增任務 Modal 裡，子項目暫存列的流水號(僅前端用，避免 id 衝突)
+
 const modal = document.getElementById("taskModal");
-document.getElementById("openModalBtn").addEventListener("click", () => modal.classList.remove("hidden"));
+document.getElementById("openModalBtn").addEventListener("click", () => { clearSubtaskRows(); modal.classList.remove("hidden"); });
 document.getElementById("closeModalBtn").addEventListener("click", () => modal.classList.add("hidden"));
 document.getElementById("cancelBtn").addEventListener("click", () => modal.classList.add("hidden"));
 
@@ -551,6 +600,268 @@ async function createGoogleSubtask(parentId, note, deadline) {
     console.log("✅ 子任務建立成功！");
   } catch (err) {
     console.error("建立子任務失敗:", err);
+  }
+}
+
+// ========================================================================
+// 💡 子項目清單 + 範本功能
+//    需要在 Google Sheets 中額外準備兩個工作表：
+//    「子項目清單」欄位: A案件ID | B內容 | C期限 | D完成 | E建立時間
+//    「範本清單」  欄位: A範本名稱 | B項目內容 | C期限天數(選填，相對建立日的天數)
+// ========================================================================
+
+// --- 新增任務 Modal：子項目清單列的操作 ---
+function addSubtaskRow(content = "", deadline = "") {
+  const wrap = document.getElementById("subtaskRows");
+  if (!wrap) return;
+  const uid = "sr" + (subtaskRowSeq++);
+  const row = document.createElement("div");
+  row.className = "flex items-center gap-2 subtask-row";
+  row.id = uid;
+  row.innerHTML = `
+    <input type="text" placeholder="子項目內容..." value="${escapeHtml(content)}" class="subtask-content flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+    <input type="date" value="${escapeHtml(deadline)}" class="subtask-deadline border border-slate-300 rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 w-36 bg-white">
+    <button type="button" onclick="document.getElementById('${uid}').remove()" class="text-rose-400 hover:text-rose-600 text-sm px-1" title="移除">✕</button>
+  `;
+  wrap.appendChild(row);
+}
+
+function clearSubtaskRows() {
+  const wrap = document.getElementById("subtaskRows");
+  if (wrap) wrap.innerHTML = "";
+}
+
+// 讀取目前「新增任務」Modal 裡，使用者填寫的子項目清單(只留下有內容的)
+function getSubtaskRowsData() {
+  const rows = document.querySelectorAll("#subtaskRows .subtask-row");
+  const result = [];
+  rows.forEach(row => {
+    const content = row.querySelector(".subtask-content").value.trim();
+    const deadlineRaw = row.querySelector(".subtask-deadline").value;
+    if (!content) return;
+    result.push({ content, deadline: deadlineRaw ? deadlineRaw.replace(/-/g, '/') : "" });
+  });
+  return result;
+}
+
+// 把一筆子項目寫入「子項目清單」工作表
+async function appendSubtaskToSheet(caseId, content, deadline) {
+  if (!accessToken || !caseId) return;
+  const now = new Date();
+  const createdStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  try {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!A:E:append?valueInputOption=USER_ENTERED`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ values: [[caseId, content, deadline || "", "FALSE", createdStr]] })
+    });
+  } catch (err) {
+    console.error("寫入子項目失敗:", err);
+  }
+}
+
+// 案件建立成功後：把 Modal 上填好的子項目清單，一次寫入 Sheets，有期限的順便同步到 Google Tasks
+async function saveSubtasksForNewCase(caseId) {
+  const items = getSubtaskRowsData();
+  if (items.length === 0) return;
+  for (const item of items) {
+    await appendSubtaskToSheet(caseId, item.content, item.deadline);
+    if (item.deadline) {
+      await createGoogleSubtask(caseId, item.content, item.deadline);
+    }
+  }
+  clearSubtaskRows();
+}
+
+// --- 案件處理 Modal：載入 / 顯示 / 勾選完成 / 新增 / 刪除 子項目 ---
+async function loadSubtasksForCase(caseId) {
+  currentSubtasksCache = [];
+  if (!accessToken || !caseId) { renderSubtaskListInDetail(); return; }
+  try {
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!A2:E`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    (data.values || []).forEach((row, i) => {
+      if (row[0] === caseId && row[1]) {
+        currentSubtasksCache.push({
+          rowIndex: i + 2,
+          content: row[1] || "",
+          deadline: row[2] || "",
+          done: (row[3] || "").toString().toUpperCase() === "TRUE"
+        });
+      }
+    });
+  } catch (err) {
+    console.error("載入子項目清單失敗:", err);
+  }
+  renderSubtaskListInDetail();
+}
+
+function renderSubtaskListInDetail() {
+  const wrap = document.getElementById("detailSubtaskList");
+  if (!wrap) return;
+  if (currentSubtasksCache.length === 0) {
+    wrap.innerHTML = '<div class="text-center text-xs text-slate-400 py-3">目前沒有子項目</div>';
+    return;
+  }
+  wrap.innerHTML = currentSubtasksCache.map(item => `
+    <div class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 group">
+      <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleSubtaskDone(${item.rowIndex}, this.checked)" class="w-4 h-4 rounded text-blue-600 shrink-0">
+      <span class="flex-1 text-sm ${item.done ? 'line-through text-slate-400' : 'text-slate-700'}">${escapeHtml(item.content)}</span>
+      ${item.deadline ? `<span class="text-xs text-rose-500 shrink-0 whitespace-nowrap">${escapeHtml(item.deadline)}</span>` : ''}
+      <button type="button" onclick="deleteSubtaskRow(${item.rowIndex})" class="text-slate-300 group-hover:text-rose-500 transition text-xs shrink-0" title="刪除">✕</button>
+    </div>
+  `).join('');
+}
+
+async function toggleSubtaskDone(rowIndex, done) {
+  const item = currentSubtasksCache.find(i => i.rowIndex === rowIndex);
+  if (item) item.done = done;
+  renderSubtaskListInDetail();
+  if (!accessToken) return;
+  try {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!D${rowIndex}?valueInputOption=USER_ENTERED`, {
+      method: "PUT",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ values: [[done ? "TRUE" : "FALSE"]] })
+    });
+  } catch (err) {
+    console.error("更新子項目完成狀態失敗:", err);
+  }
+}
+
+async function deleteSubtaskRow(rowIndex) {
+  if (!confirm("確定要刪除這個子項目嗎？")) return;
+  currentSubtasksCache = currentSubtasksCache.filter(i => i.rowIndex !== rowIndex);
+  renderSubtaskListInDetail();
+  if (!accessToken) return;
+  try {
+    // 💡 直接清空該列內容，比刪除整列安全(不會動到其他列的行號)
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!A${rowIndex}:E${rowIndex}?valueInputOption=USER_ENTERED`, {
+      method: "PUT",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ values: [["", "", "", "", ""]] })
+    });
+  } catch (err) {
+    console.error("刪除子項目失敗:", err);
+  }
+}
+
+async function addSubtaskFromDetailModal() {
+  const contentEl = document.getElementById("detailSubtaskNewContent");
+  const deadlineEl = document.getElementById("detailSubtaskNewDeadline");
+  const content = contentEl.value.trim();
+  if (!content) return;
+  const deadline = deadlineEl.value ? deadlineEl.value.replace(/-/g, '/') : "";
+
+  if (!currentEditingTaskId) { alert("這筆案件尚未同步到 Google Tasks，暫時無法建立子項目。"); return; }
+
+  await appendSubtaskToSheet(currentEditingTaskId, content, deadline);
+  if (deadline) await createGoogleSubtask(currentEditingTaskId, content, deadline);
+
+  contentEl.value = "";
+  deadlineEl.value = "";
+  await loadSubtasksForCase(currentEditingTaskId);
+}
+
+// --- 範本功能 ---
+async function loadTemplates(force = false) {
+  if (!force && Object.keys(templatesCache).length > 0) return templatesCache;
+  templatesCache = {};
+  if (!accessToken) return templatesCache;
+  try {
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(TEMPLATE_SHEET)}!A2:C`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    (data.values || []).forEach(row => {
+      const name = row[0];
+      if (!name) return;
+      if (!templatesCache[name]) templatesCache[name] = [];
+      templatesCache[name].push({ content: row[1] || "", days: row[2] !== undefined && row[2] !== "" ? Number(row[2]) : null });
+    });
+  } catch (err) {
+    console.error("載入範本失敗:", err);
+  }
+  return templatesCache;
+}
+
+async function openTemplatePicker() {
+  const modalEl = document.getElementById("templatePickerModal");
+  modalEl.classList.remove("hidden");
+  const listEl = document.getElementById("templatePickerList");
+  listEl.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">載入中...</div>';
+
+  await loadTemplates(true);
+  const names = Object.keys(templatesCache);
+
+  if (names.length === 0) {
+    listEl.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">目前還沒有任何範本<br>先在下方新增幾個子項目，再點「另存為範本」吧！</div>';
+    return;
+  }
+
+  listEl.innerHTML = names.map(name => `
+    <button type="button" onclick="applyTemplate('${encodeURIComponent(name)}')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 transition flex items-center justify-between group">
+      <span class="font-bold text-sm text-slate-700">${escapeHtml(name)}</span>
+      <span class="text-xs text-slate-400">${templatesCache[name].length} 個項目</span>
+    </button>
+  `).join('');
+}
+
+function closeTemplatePicker() {
+  document.getElementById("templatePickerModal").classList.add("hidden");
+}
+
+function applyTemplate(encName) {
+  const name = decodeURIComponent(encName);
+  const items = templatesCache[name] || [];
+  clearSubtaskRows();
+  const today = new Date();
+  items.forEach(item => {
+    let deadlineStr = "";
+    if (item.days !== null && !isNaN(item.days)) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + item.days);
+      deadlineStr = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+    }
+    addSubtaskRow(item.content, deadlineStr);
+  });
+  closeTemplatePicker();
+}
+
+async function promptSaveTemplate() {
+  const items = getSubtaskRowsData();
+  if (items.length === 0) { alert("目前的子項目清單是空的，先填幾個項目再另存為範本喔！"); return; }
+
+  const name = prompt("請輸入範本名稱：", "");
+  if (!name || !name.trim()) return;
+  const templateName = name.trim();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const rows = items.map(item => {
+    let days = "";
+    if (item.deadline) {
+      const [y, m, d] = item.deadline.split('/').map(Number);
+      const dl = new Date(y, m - 1, d);
+      days = Math.round((dl - today) / 86400000);
+    }
+    return [templateName, item.content, days];
+  });
+
+  try {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(TEMPLATE_SHEET)}!A:C:append?valueInputOption=USER_ENTERED`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ values: rows })
+    });
+    alert(`✅ 已將目前的子項目清單另存為範本「${templateName}」！`);
+    templatesCache = {}; // 讓下次打開選單時重新載入
+  } catch (err) {
+    console.error("儲存範本失敗:", err);
+    alert("儲存範本失敗，請稍後再試。");
   }
 }
 
@@ -682,6 +993,9 @@ document.getElementById("saveTaskBtn").addEventListener("click", async () => {
     const result = await response.json();
     
     if (result.updates) {
+      // 💡 把 Modal 裡填好的子項目清單，一併寫入子項目清單工作表(有期限的會同步到 Google Tasks)
+      if (taskId) await saveSubtasksForNewCase(taskId);
+
       alert("✅ 案件儲存成功！已同步至 Google Tasks。");
       document.getElementById("categorySelect").value = "";
       document.getElementById("vendorSelect").value = "無"; 
@@ -692,6 +1006,7 @@ document.getElementById("saveTaskBtn").addEventListener("click", async () => {
       document.getElementById("newTaskTags").value = "";
       document.getElementById("taskTitle").value = "";
       document.getElementById("taskDetails").value = "";
+      clearSubtaskRows();
       
       modal.classList.add("hidden");
       loadTasksFromSheets(); 
@@ -1340,6 +1655,9 @@ function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, co
   document.getElementById("detailDeadline").value = dl ? dl.replace(/\//g, '-') : "";
   
   renderHistoryLog(currentEditingLog);
+  document.getElementById("detailSubtaskNewContent").value = "";
+  document.getElementById("detailSubtaskNewDeadline").value = "";
+  loadSubtasksForCase(currentEditingTaskId); // 💡 載入這個案件底下的子項目清單
   document.getElementById("taskDetailModal").classList.remove("hidden");
 }
 
