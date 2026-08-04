@@ -301,8 +301,9 @@
         <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
           <label class="text-xs font-bold text-slate-600">✅ 子項目清單 (選填，可拆成好幾個小部分)</label>
           <div class="flex items-center gap-3">
-            <button type="button" onclick="openTemplatePicker()" class="text-xs text-purple-600 hover:text-purple-800 font-bold">📋 套用範本</button>
-            <button type="button" onclick="promptSaveTemplate()" class="text-xs text-blue-600 hover:text-blue-800 font-bold">💾 另存為範本</button>
+            <button type="button" onclick="openTemplatePicker()" class="text-xs text-purple-600 hover:text-purple-800 font-bold">📋 套用/管理範本</button>
+            <button type="button" id="updateTemplateBtn" onclick="updateAppliedTemplate()" class="hidden text-xs text-emerald-600 hover:text-emerald-800 font-bold">💾 更新範本「<span id="updateTemplateName"></span>」</button>
+            <button type="button" onclick="promptSaveTemplate()" class="text-xs text-blue-600 hover:text-blue-800 font-bold">💾 另存為新範本</button>
           </div>
         </div>
         <div id="subtaskRows" class="space-y-2"></div>
@@ -428,15 +429,34 @@
   </div>
 </div>
 
-<!-- 💡 範本選擇 Modal -->
+<!-- 💡 範本選擇/管理 Modal -->
 <div id="templatePickerModal" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[60] p-4">
-  <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[80vh]">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
     <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-      <h3 class="font-bold text-slate-800">📋 選擇範本</h3>
+      <h3 class="font-bold text-slate-800">📋 範本管理</h3>
       <button onclick="closeTemplatePicker()" class="text-slate-400 hover:text-rose-500 transition text-xl font-bold">&times;</button>
     </div>
-    <div id="templatePickerList" class="p-3 overflow-y-auto space-y-1">
+
+    <!-- 清單畫面：選擇要套用、編輯或刪除哪個範本 -->
+    <div id="templatePickerList" class="p-3 overflow-y-auto space-y-1 flex-1">
       <div class="text-center text-xs text-slate-400 py-6">載入中...</div>
+    </div>
+
+    <!-- 編輯畫面：可以改範本標題、改項目內容、新增/刪除項目 -->
+    <div id="templateEditorView" class="hidden p-4 overflow-y-auto flex-1 space-y-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">範本名稱</label>
+        <input type="text" id="templateEditName" placeholder="輸入範本名稱..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">項目清單 <span class="font-normal text-slate-400">(天數：從建立案件那天算起第幾天，選填)</span></label>
+        <div id="templateEditRows" class="space-y-2"></div>
+        <button type="button" onclick="addTemplateEditRow()" class="mt-2 text-xs text-slate-500 hover:text-slate-700 font-bold">＋ 新增項目</button>
+      </div>
+    </div>
+    <div id="templateEditorFooter" class="hidden px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-between gap-2">
+      <button type="button" onclick="backToTemplateList()" class="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-200 rounded-lg font-bold transition">← 返回清單</button>
+      <button type="button" onclick="saveTemplateEditor()" class="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-sm transition">儲存範本</button>
     </div>
   </div>
 </div>
@@ -629,6 +649,8 @@ function addSubtaskRow(content = "", deadline = "") {
 function clearSubtaskRows() {
   const wrap = document.getElementById("subtaskRows");
   if (wrap) wrap.innerHTML = "";
+  lastAppliedTemplateName = null;
+  updateTemplateQuickSaveHint();
 }
 
 // 讀取目前「新增任務」Modal 裡，使用者填寫的子項目清單(只留下有內容的)
@@ -787,30 +809,46 @@ async function loadTemplates(force = false) {
   return templatesCache;
 }
 
+let lastAppliedTemplateName = null;      // 目前套用中的範本名稱(用來快速回存更新)
+let editingTemplateOriginalName = null;  // 正在編輯畫面裡，原本的範本名稱(null 代表新增範本)
+
 async function openTemplatePicker() {
   const modalEl = document.getElementById("templatePickerModal");
   modalEl.classList.remove("hidden");
+  backToTemplateList(); // 每次打開都先回到清單畫面
   const listEl = document.getElementById("templatePickerList");
   listEl.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">載入中...</div>';
 
   await loadTemplates(true);
+  renderTemplatePickerList();
+}
+
+function renderTemplatePickerList() {
+  const listEl = document.getElementById("templatePickerList");
   const names = Object.keys(templatesCache);
 
-  if (names.length === 0) {
-    listEl.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">目前還沒有任何範本<br>先在下方新增幾個子項目，再點「另存為範本」吧！</div>';
-    return;
-  }
+  let html = `<button type="button" onclick="openTemplateEditor('')" class="w-full text-left px-3 py-2 rounded-lg border border-dashed border-slate-300 text-xs text-slate-500 hover:bg-slate-50 hover:border-slate-400 transition mb-2">＋ 新增一個範本</button>`;
 
-  listEl.innerHTML = names.map(name => `
-    <button type="button" onclick="applyTemplate('${encodeURIComponent(name)}')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 transition flex items-center justify-between group">
-      <span class="font-bold text-sm text-slate-700">${escapeHtml(name)}</span>
-      <span class="text-xs text-slate-400">${templatesCache[name].length} 個項目</span>
-    </button>
-  `).join('');
+  if (names.length === 0) {
+    html += '<div class="text-center text-xs text-slate-400 py-6">目前還沒有任何範本</div>';
+  } else {
+    html += names.map(name => `
+      <div class="flex items-center gap-1 rounded-lg hover:bg-blue-50 transition group">
+        <button type="button" onclick="applyTemplate('${encodeURIComponent(name)}')" class="flex-1 min-w-0 text-left px-2 py-2.5 rounded-lg flex items-center justify-between">
+          <span class="font-bold text-sm text-slate-700 truncate">${escapeHtml(name)}</span>
+          <span class="text-xs text-slate-400 ml-2 shrink-0">${templatesCache[name].length} 項</span>
+        </button>
+        <button type="button" onclick="openTemplateEditor('${encodeURIComponent(name)}')" class="shrink-0 text-slate-300 group-hover:text-blue-500 transition px-1.5 py-1" title="編輯範本">✏️</button>
+        <button type="button" onclick="deleteTemplateCompletely('${encodeURIComponent(name)}')" class="shrink-0 text-slate-300 group-hover:text-rose-500 transition px-1.5 py-1" title="刪除範本">🗑️</button>
+      </div>
+    `).join('');
+  }
+  listEl.innerHTML = html;
 }
 
 function closeTemplatePicker() {
   document.getElementById("templatePickerModal").classList.add("hidden");
+  backToTemplateList();
 }
 
 function applyTemplate(encName) {
@@ -827,7 +865,171 @@ function applyTemplate(encName) {
     }
     addSubtaskRow(item.content, deadlineStr);
   });
+  lastAppliedTemplateName = name;
+  updateTemplateQuickSaveHint();
   closeTemplatePicker();
+}
+
+// 顯示/隱藏「💾 更新範本」快速按鈕(只有套用過範本、且還沒被清空時才顯示)
+function updateTemplateQuickSaveHint() {
+  const btn = document.getElementById("updateTemplateBtn");
+  const nameEl = document.getElementById("updateTemplateName");
+  if (!btn) return;
+  if (lastAppliedTemplateName) {
+    nameEl.textContent = lastAppliedTemplateName;
+    btn.classList.remove("hidden");
+  } else {
+    btn.classList.add("hidden");
+  }
+}
+
+// ---- 編輯畫面：改標題、改/加項目 ----
+function openTemplateEditor(encName) {
+  const name = encName ? decodeURIComponent(encName) : "";
+  editingTemplateOriginalName = name || null;
+  document.getElementById("templateEditName").value = name;
+  document.getElementById("templateEditRows").innerHTML = "";
+  const items = name ? (templatesCache[name] || []) : [];
+  items.forEach(item => addTemplateEditRow(item.content, item.days === null ? "" : item.days));
+  if (items.length === 0) addTemplateEditRow(); // 至少留一行方便輸入
+
+  document.getElementById("templatePickerList").classList.add("hidden");
+  document.getElementById("templateEditorView").classList.remove("hidden");
+  document.getElementById("templateEditorFooter").classList.remove("hidden");
+}
+
+function backToTemplateList() {
+  document.getElementById("templateEditorView").classList.add("hidden");
+  document.getElementById("templateEditorFooter").classList.add("hidden");
+  document.getElementById("templatePickerList").classList.remove("hidden");
+}
+
+function addTemplateEditRow(content = "", days = "") {
+  const wrap = document.getElementById("templateEditRows");
+  const uid = "ter" + (subtaskRowSeq++);
+  const row = document.createElement("div");
+  row.className = "flex items-center gap-2 template-edit-row";
+  row.id = uid;
+  row.innerHTML = `
+    <input type="text" placeholder="項目內容..." value="${escapeHtml(content)}" class="template-edit-content flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+    <input type="number" placeholder="天數" value="${days === "" || days === null || days === undefined ? '' : days}" class="template-edit-days border border-slate-300 rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 w-20" title="期限天數(選填)">
+    <button type="button" onclick="document.getElementById('${uid}').remove()" class="text-rose-400 hover:text-rose-600 text-sm px-1" title="移除">✕</button>
+  `;
+  wrap.appendChild(row);
+}
+
+function getTemplateEditRowsData() {
+  const rows = document.querySelectorAll("#templateEditRows .template-edit-row");
+  const result = [];
+  rows.forEach(row => {
+    const content = row.querySelector(".template-edit-content").value.trim();
+    if (!content) return;
+    const daysRaw = row.querySelector(".template-edit-days").value;
+    result.push({ content, days: daysRaw === "" ? "" : Number(daysRaw) });
+  });
+  return result;
+}
+
+// 清空某個範本名稱底下所有資料列(改名/更新內容/刪除範本前的共用清理步驟)
+async function deleteTemplateRows(name) {
+  if (!accessToken || !name) return;
+  try {
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(TEMPLATE_SHEET)}!A2:C`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    const rowsToBlank = [];
+    (data.values || []).forEach((row, i) => { if (row[0] === name) rowsToBlank.push(i + 2); });
+    if (rowsToBlank.length === 0) return;
+
+    const requests = rowsToBlank.map(rowIndex => ({
+      range: `${TEMPLATE_SHEET}!A${rowIndex}:C${rowIndex}`,
+      values: [["", "", ""]]
+    }));
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ valueInputOption: "USER_ENTERED", data: requests })
+    });
+  } catch (err) {
+    console.error("清除範本資料失敗:", err);
+  }
+}
+
+// 儲存編輯畫面：可能是「改標題」「改內容」「新增項目」或「新建範本」，統一用「清空舊列 → 寫入新列」處理
+async function saveTemplateEditor() {
+  const newName = document.getElementById("templateEditName").value.trim();
+  if (!newName) { alert("範本名稱不能是空的喔！"); return; }
+  const items = getTemplateEditRowsData();
+  if (items.length === 0) { alert("至少要有一個項目喔！"); return; }
+
+  if (editingTemplateOriginalName && editingTemplateOriginalName !== newName && templatesCache[newName]) {
+    if (!confirm(`已經有一個叫做「${newName}」的範本了，儲存後會被這次的內容覆蓋，確定要繼續嗎？`)) return;
+  }
+
+  if (editingTemplateOriginalName) await deleteTemplateRows(editingTemplateOriginalName);
+  if (newName !== editingTemplateOriginalName) await deleteTemplateRows(newName);
+
+  const rows = items.map(item => [newName, item.content, item.days === "" ? "" : item.days]);
+  try {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(TEMPLATE_SHEET)}!A:C:append?valueInputOption=USER_ENTERED`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ values: rows })
+    });
+    if (lastAppliedTemplateName === editingTemplateOriginalName) lastAppliedTemplateName = newName;
+    templatesCache = {};
+    await loadTemplates(true);
+    backToTemplateList();
+    renderTemplatePickerList();
+    alert(`✅ 範本「${newName}」已儲存！`);
+  } catch (err) {
+    console.error("儲存範本失敗:", err);
+    alert("儲存範本失敗，請稍後再試。");
+  }
+}
+
+async function deleteTemplateCompletely(encName) {
+  const name = decodeURIComponent(encName);
+  if (!confirm(`確定要刪除範本「${name}」嗎？此動作無法復原。`)) return;
+  await deleteTemplateRows(name);
+  if (lastAppliedTemplateName === name) { lastAppliedTemplateName = null; updateTemplateQuickSaveHint(); }
+  templatesCache = {};
+  await loadTemplates(true);
+  renderTemplatePickerList();
+}
+
+// 套用範本、調整內容/新增項目之後，直接把「新增任務」Modal 目前的子項目清單回存到同一個範本(不用改名的話用這個最快)
+async function updateAppliedTemplate() {
+  if (!lastAppliedTemplateName) return;
+  const items = getSubtaskRowsData(); // [{content, deadline:'YYYY/MM/DD'}]
+  if (items.length === 0) { alert("目前的子項目清單是空的喔！"); return; }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const rows = items.map(item => {
+    let days = "";
+    if (item.deadline) {
+      const [y, m, d] = item.deadline.split('/').map(Number);
+      const dl = new Date(y, m - 1, d);
+      days = Math.round((dl - today) / 86400000);
+    }
+    return [lastAppliedTemplateName, item.content, days];
+  });
+
+  await deleteTemplateRows(lastAppliedTemplateName);
+  try {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(TEMPLATE_SHEET)}!A:C:append?valueInputOption=USER_ENTERED`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ values: rows })
+    });
+    templatesCache = {};
+    alert(`✅ 範本「${lastAppliedTemplateName}」已更新！`);
+  } catch (err) {
+    console.error("更新範本失敗:", err);
+    alert("更新範本失敗，請稍後再試。");
+  }
 }
 
 async function promptSaveTemplate() {
@@ -858,12 +1060,15 @@ async function promptSaveTemplate() {
       body: JSON.stringify({ values: rows })
     });
     alert(`✅ 已將目前的子項目清單另存為範本「${templateName}」！`);
+    lastAppliedTemplateName = templateName;
+    updateTemplateQuickSaveHint();
     templatesCache = {}; // 讓下次打開選單時重新載入
   } catch (err) {
     console.error("儲存範本失敗:", err);
     alert("儲存範本失敗，請稍後再試。");
   }
 }
+
 
 async function loadSettingsFromSheets() {
   try {
