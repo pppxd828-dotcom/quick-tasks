@@ -229,6 +229,8 @@
         </tbody>
       </table>
     </div>
+    <!-- 💡 分頁控制列 -->
+    <div id="paginationBar" class="flex items-center justify-between px-4 py-3 border-t border-slate-100 flex-wrap gap-3"></div>
   </section>
 </main>
 
@@ -1445,6 +1447,7 @@ function reapplySort() {
 
   rows.forEach(r => tbody.appendChild(r));
   updateSortArrows();
+  renderPagination(); // 排序會改變順序，分頁要重新切一次(頁碼保留)
 }
 
 function updateSortArrows() {
@@ -2016,6 +2019,95 @@ async function updateSheetData(rowIndex, newStatus, currentLog, taskId) {
 let dashboardFilter = null;
 let activeTagFilter = null;
 
+// 💡 分頁狀態
+let currentPage = 1;
+let pageSize = 20; // 可選 10/20/50/100，或 Infinity 代表「全部顯示」
+
+// 依照目前的篩選結果(filter-hidden class)和分頁設定，決定每一列要不要顯示
+function renderPagination() {
+  const tbody = document.getElementById('taskTableBody');
+  if (!tbody) return;
+  const allRows = Array.from(tbody.querySelectorAll('tr.table-row-item'));
+  const matching = allRows.filter(r => !r.classList.contains('filter-hidden'));
+  const total = matching.length;
+  const totalPages = pageSize === Infinity ? 1 : Math.max(1, Math.ceil(total / pageSize));
+
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const start = pageSize === Infinity ? 0 : (currentPage - 1) * pageSize;
+  const end = pageSize === Infinity ? total : Math.min(total, start + pageSize);
+
+  matching.forEach((row, i) => {
+    row.style.display = (i >= start && i < end) ? "" : "none";
+  });
+  allRows.forEach(row => {
+    if (row.classList.contains('filter-hidden')) row.style.display = "none";
+  });
+
+  updatePaginationBar(total, totalPages, start, end);
+}
+
+function goToPage(p) {
+  currentPage = p;
+  renderPagination();
+  const section = document.getElementById('taskTableBody');
+  if (section && section.closest('section')) {
+    section.closest('section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function changePageSize(val) {
+  pageSize = (val === 'all') ? Infinity : parseInt(val, 10);
+  currentPage = 1;
+  renderPagination();
+}
+
+function updatePaginationBar(total, totalPages, start, end) {
+  const bar = document.getElementById('paginationBar');
+  if (!bar) return;
+
+  if (total === 0) {
+    bar.innerHTML = '';
+    return;
+  }
+
+  const rangeText = pageSize === Infinity
+    ? `顯示全部 ${total} 筆`
+    : `顯示第 ${start + 1}–${end} 筆，共 ${total} 筆`;
+
+  // 頁碼按鈕：只顯示目前頁附近的幾頁，避免頁數太多時版面爆掉
+  let pageBtns = '';
+  if (totalPages > 1) {
+    const maxBtns = 7;
+    let pStart = Math.max(1, currentPage - 3);
+    let pEnd = Math.min(totalPages, pStart + maxBtns - 1);
+    pStart = Math.max(1, pEnd - maxBtns + 1);
+    for (let p = pStart; p <= pEnd; p++) {
+      pageBtns += `<button onclick="goToPage(${p})" class="w-8 h-8 rounded-lg text-sm font-bold transition ${p === currentPage ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}">${p}</button>`;
+    }
+  }
+
+  bar.innerHTML = `
+    <span class="text-xs text-slate-400">${rangeText}</span>
+    <div class="flex items-center gap-3 flex-wrap">
+      <select onchange="changePageSize(this.value)" class="text-xs border border-slate-200 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500">
+        <option value="10" ${pageSize === 10 ? 'selected' : ''}>每頁 10 筆</option>
+        <option value="20" ${pageSize === 20 ? 'selected' : ''}>每頁 20 筆</option>
+        <option value="50" ${pageSize === 50 ? 'selected' : ''}>每頁 50 筆</option>
+        <option value="100" ${pageSize === 100 ? 'selected' : ''}>每頁 100 筆</option>
+        <option value="all" ${pageSize === Infinity ? 'selected' : ''}>全部顯示</option>
+      </select>
+      ${totalPages > 1 ? `
+      <div class="flex items-center gap-1">
+        <button onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg text-sm text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition">‹</button>
+        ${pageBtns}
+        <button onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg text-sm text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition">›</button>
+      </div>` : ''}
+    </div>
+  `;
+}
+
 function applyFilter() {
   const checkedStatuses = Array.from(document.querySelectorAll('.filter-status-cb:checked')).map(cb => cb.value);
   const checkedCategories = Array.from(document.querySelectorAll('.filter-category-cb:checked')).map(cb => cb.value);
@@ -2051,8 +2143,13 @@ function applyFilter() {
     else if (dashboardFilter === '進行中') matchDashboard = statusText.includes('進行中');
     else if (dashboardFilter === '卡關') matchDashboard = statusText.includes('卡關') || statusText.includes('等回覆');
 
-    row.style.display = (matchStatus && matchCategory && matchVendor && matchAssignee && matchTag && matchTitle && matchDashboard) ? "" : "none";
+    const isMatch = matchStatus && matchCategory && matchVendor && matchAssignee && matchTag && matchTitle && matchDashboard;
+    // 💡 不直接設定 display，改標記 class，交給分頁邏輯統一決定「篩選中的這些列，目前這一頁要顯示哪幾筆」
+    row.classList.toggle('filter-hidden', !isMatch);
   });
+
+  currentPage = 1; // 篩選條件變了，回到第一頁比較合理
+  renderPagination();
 }
 
 function filterByDashboard(type) {
