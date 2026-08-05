@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   body { font-family: 'Noto Sans TC', system-ui, sans-serif; background-color: #f1f5f9; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -193,6 +194,7 @@
             </label>
           </div>
         </div>
+        <button type="button" onclick="openHandoverModal()" class="px-3 py-1.5 text-sm font-bold text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 transition">📤 工作交接</button>
         <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100 transition">📥 匯出 Excel</button>
       </div>
       
@@ -496,6 +498,44 @@
     <div id="templateEditorFooter" class="hidden px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-between gap-2">
       <button type="button" onclick="backToTemplateList()" class="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-200 rounded-lg font-bold transition">← 返回清單</button>
       <button type="button" onclick="saveTemplateEditor()" class="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-sm transition">儲存範本</button>
+    </div>
+  </div>
+</div>
+
+<!-- 💡 工作交接表 Modal -->
+<div id="handoverModal" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[60] p-4">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+      <h3 class="font-bold text-slate-800">📤 工作交接表</h3>
+      <button onclick="closeHandoverModal()" class="text-slate-400 hover:text-rose-500 transition text-xl font-bold">&times;</button>
+    </div>
+
+    <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">起始日期</label>
+        <input type="date" id="handoverStart" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">結束日期</label>
+        <input type="date" id="handoverEnd" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <label class="flex items-center gap-2 text-xs text-slate-600 pb-2">
+        <input type="checkbox" id="handoverIncludeNoDeadline" checked class="w-4 h-4 rounded text-blue-600">
+        也包含未結案、但沒填期限的案件
+      </label>
+      <button type="button" onclick="generateHandoverReport()" class="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-sm transition">產生報表</button>
+      <span class="text-xs text-slate-400">💡 只會抓「未結案」的案件，範圍是「期限落在這段日期」或「還沒填期限」的案件</span>
+    </div>
+
+    <div id="handoverResultBar" class="hidden px-4 py-2 border-b border-slate-100 items-center justify-between gap-2 flex-wrap">
+      <span id="handoverSummary" class="text-xs text-slate-400"></span>
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="copyHandoverReport()" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition">📋 複製表格(可直接貼到 Excel/Email)</button>
+        <button type="button" onclick="exportHandoverToExcel()" class="px-3 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-md transition">📥 下載 Excel</button>
+      </div>
+    </div>
+    <div id="handoverTableWrap" class="p-4 overflow-auto flex-1">
+      <div class="text-center text-xs text-slate-400 py-10">選好日期範圍後，按「產生報表」</div>
     </div>
   </div>
 </div>
@@ -1222,6 +1262,178 @@ async function promptSaveTemplate() {
     alert("儲存範本失敗，請稍後再試。");
   }
 }
+
+// ========================================================================
+// 💡 工作交接表：把某段期間內「還沒結案」的案件、子項目、期限、聯絡人整理成一張表
+// ========================================================================
+let handoverReportData = []; // 目前產生出來的報表列，供複製/匯出使用
+
+function openHandoverModal() {
+  document.getElementById('handoverModal').classList.remove('hidden');
+  const startEl = document.getElementById('handoverStart');
+  const endEl = document.getElementById('handoverEnd');
+  if (!startEl.value || !endEl.value) {
+    // 💡 預設帶「今天」到「7天後」，使用者再自行調整成要交接的區間
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const fmt = (d) => `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+    startEl.value = fmt(today);
+    endEl.value = fmt(nextWeek);
+  }
+}
+
+function closeHandoverModal() {
+  document.getElementById('handoverModal').classList.add('hidden');
+}
+
+async function generateHandoverReport() {
+  const startRaw = document.getElementById('handoverStart').value;
+  const endRaw = document.getElementById('handoverEnd').value;
+  if (!startRaw || !endRaw) { alert('請選擇起始與結束日期喔！'); return; }
+  const start = startRaw.replace(/-/g, '/');
+  const end = endRaw.replace(/-/g, '/');
+  const includeNoDeadline = document.getElementById('handoverIncludeNoDeadline').checked;
+
+  const wrap = document.getElementById('handoverTableWrap');
+  const bar = document.getElementById('handoverResultBar');
+  wrap.innerHTML = '<div class="text-center text-xs text-slate-400 py-10">整理資料中...</div>';
+  bar.classList.add('hidden');
+  bar.classList.remove('flex');
+
+  // 1. 先重新整理資料，確保交接表是最新狀態
+  if (typeof loadTasksFromSheets === 'function') await loadTasksFromSheets();
+
+  // 2. 篩選：未結案、且(期限落在範圍內，或沒填期限但選了要包含)
+  const matched = (allTasksData || []).filter(task => {
+    if (task.isVoid || task.status.includes('結案')) return false;
+    if (!task.deadline) return includeNoDeadline;
+    return task.deadline >= start && task.deadline <= end;
+  });
+
+  if (matched.length === 0) {
+    wrap.innerHTML = '<div class="text-center text-xs text-slate-400 py-10">這個範圍內沒有符合條件的案件</div>';
+    return;
+  }
+
+  // 3. 子項目清單一次抓完，再依案件ID分組(比逐筆案件各抓一次有效率)
+  let subtasksByCase = {};
+  if (accessToken) {
+    try {
+      const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!A2:E`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const data = await res.json();
+      (data.values || []).forEach(row => {
+        if (!row[0] || !row[1]) return;
+        if (!subtasksByCase[row[0]]) subtasksByCase[row[0]] = [];
+        subtasksByCase[row[0]].push({ content: row[1], deadline: row[2] || '', done: (row[3] || '').toString().toUpperCase() === 'TRUE' });
+      });
+    } catch (err) {
+      console.error('讀取子項目清單失敗:', err);
+    }
+  }
+
+  // 4. 依期限排序(沒填期限的排最後面)
+  matched.sort((a, b) => {
+    if (!a.deadline) return 1;
+    if (!b.deadline) return -1;
+    return a.deadline < b.deadline ? -1 : (a.deadline > b.deadline ? 1 : 0);
+  });
+
+  // 5. 組出報表資料：每個案件一列，底下的子項目各自一列(縮排)，方便複製/匯出時保持乾淨結構
+  handoverReportData = [];
+  matched.forEach(task => {
+    const entries = parseHistoryLog(task.historyLog);
+    const latestNote = entries.length > 0
+      ? entries[0].headline + (entries[0].notes.length ? '｜' + entries[0].notes.join('；') : '')
+      : '';
+
+    handoverReportData.push({
+      type: '📁 案件', category: task.category, vendor: task.vendor, title: task.title,
+      status: task.status, contact: task.contact, assignee: task.assignee,
+      deadline: task.deadline || '(未填)', note: latestNote
+    });
+
+    const subs = subtasksByCase[task.taskId] || [];
+    subs.forEach(sub => {
+      handoverReportData.push({
+        type: '　└子項目', category: '', vendor: '', title: sub.content,
+        status: '', contact: '', assignee: '',
+        deadline: sub.deadline || '', note: sub.done ? '✅ 已完成' : '未完成'
+      });
+    });
+  });
+
+  renderHandoverTable();
+}
+
+function renderHandoverTable() {
+  const wrap = document.getElementById('handoverTableWrap');
+  const bar = document.getElementById('handoverResultBar');
+  const summary = document.getElementById('handoverSummary');
+
+  const caseCount = handoverReportData.filter(r => r.type === '📁 案件').length;
+  const subCount = handoverReportData.length - caseCount;
+  summary.textContent = `共 ${caseCount} 筆案件、${subCount} 筆子項目`;
+  bar.classList.remove('hidden');
+  bar.classList.add('flex');
+
+  const headers = ['類型', '案件類別', '負責廠商', '任務/子項目摘要', '狀態', '聯絡人', '處理人', '期限', '備註/目前進度'];
+  let html = '<table class="w-full text-xs border-collapse"><thead><tr class="bg-slate-100 text-slate-500">';
+  headers.forEach(h => html += `<th class="px-3 py-2 text-left font-bold border border-slate-200 whitespace-nowrap">${h}</th>`);
+  html += '</tr></thead><tbody>';
+  handoverReportData.forEach(r => {
+    const isSub = r.type !== '📁 案件';
+    html += `<tr class="${isSub ? 'bg-slate-50 text-slate-500' : 'hover:bg-blue-50'}">
+      <td class="px-3 py-2 border border-slate-200 whitespace-nowrap">${escapeHtml(r.type)}</td>
+      <td class="px-3 py-2 border border-slate-200 whitespace-nowrap">${escapeHtml(r.category)}</td>
+      <td class="px-3 py-2 border border-slate-200 whitespace-nowrap">${escapeHtml(r.vendor)}</td>
+      <td class="px-3 py-2 border border-slate-200">${escapeHtml(r.title)}</td>
+      <td class="px-3 py-2 border border-slate-200 whitespace-nowrap">${escapeHtml(r.status)}</td>
+      <td class="px-3 py-2 border border-slate-200 whitespace-nowrap">${escapeHtml(r.contact)}</td>
+      <td class="px-3 py-2 border border-slate-200 whitespace-nowrap">${escapeHtml(r.assignee)}</td>
+      <td class="px-3 py-2 border border-slate-200 whitespace-nowrap ${r.deadline && r.deadline !== '(未填)' ? 'text-rose-500 font-medium' : 'text-slate-400'}">${escapeHtml(r.deadline)}</td>
+      <td class="px-3 py-2 border border-slate-200">${escapeHtml(r.note)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function copyHandoverReport() {
+  if (handoverReportData.length === 0) return;
+  const headers = ['類型', '案件類別', '負責廠商', '任務/子項目摘要', '狀態', '聯絡人', '處理人', '期限', '備註/目前進度'];
+  const lines = [headers.join('\t')];
+  handoverReportData.forEach(r => {
+    lines.push([r.type, r.category, r.vendor, r.title, r.status, r.contact, r.assignee, r.deadline, r.note]
+      .map(v => (v || '').toString().replace(/\t/g, ' ').replace(/\n/g, ' '))
+      .join('\t'));
+  });
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    alert('✅ 已複製到剪貼簿！可以直接貼到 Excel、Google Sheets 或 Email 裡。');
+  }).catch(() => {
+    alert('複製失敗，請改用「下載 Excel」，或手動選取表格內容複製。');
+  });
+}
+
+function exportHandoverToExcel() {
+  if (handoverReportData.length === 0) return;
+  if (typeof XLSX === 'undefined') { alert('Excel 匯出功能載入失敗(可能是網路問題)，請改用「複製表格」貼到 Excel 裡。'); return; }
+
+  const headers = ['類型', '案件類別', '負責廠商', '任務/子項目摘要', '狀態', '聯絡人', '處理人', '期限', '備註/目前進度'];
+  const rows = handoverReportData.map(r => [r.type, r.category, r.vendor, r.title, r.status, r.contact, r.assignee, r.deadline, r.note]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = [{ wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 32 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 34 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '交接表');
+
+  const start = document.getElementById('handoverStart').value;
+  const end = document.getElementById('handoverEnd').value;
+  XLSX.writeFile(wb, `工作交接表_${start}_${end}.xlsx`);
+}
+
 
 
 async function loadSettingsFromSheets() {
