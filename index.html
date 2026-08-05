@@ -637,7 +637,7 @@ async function syncGoogleTask(taskId, title, notes, deadline, status) {
 }
 
 // 💡 核心 API：建立 Google Tasks 子任務
-async function createGoogleSubtask(parentId, note, deadline) {
+async function createGoogleSubtask(parentId, note, deadline, parentTitle = "") {
   if (!accessToken || !parentId) return;
   
   let dueStr = null;
@@ -646,11 +646,16 @@ async function createGoogleSubtask(parentId, note, deadline) {
     dueStr = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString();
   }
 
-  const shortTitle = note.length > 20 ? note.substring(0, 20) + "..." : note;
+  const shortNote = note.length > 25 ? note.substring(0, 25) + "..." : note;
+  const shortParent = parentTitle && parentTitle.length > 12 ? parentTitle.substring(0, 12) + "…" : parentTitle;
+  // 💡 標題加上所屬案件名稱(用【】包起來)，這樣在 Google Tasks 的清單/提醒通知裡，
+  //    不用點進去看 notes 也能一眼看出這是哪個案件底下的子任務
+  const title = shortParent ? `【${shortParent}】${shortNote}` : `[追蹤] ${shortNote}`;
+  const notesText = parentTitle ? `所屬案件：${parentTitle}\n\n${note}` : note;
 
   const body = {
-    title: `[追蹤] ${shortTitle}`,
-    notes: note,
+    title: title,
+    notes: notesText,
     due: dueStr,
     status: "needsAction"
   };
@@ -737,7 +742,7 @@ async function generateNextRecurrence(oldRowIndex, oldTaskId, recurFreq, oldDead
 
     // 2. 把原本案件的子項目清單也複製過去(每個項目的期限，依原本跟主期限的天數差，套用到新的主期限上)
     if (oldTaskId && newTaskId) {
-      await copySubtasksToNextRecurrence(oldTaskId, newTaskId, oldDeadline, nextDeadline);
+      await copySubtasksToNextRecurrence(oldTaskId, newTaskId, oldDeadline, nextDeadline, displayTitle);
     }
 
     console.log(`🔁 已自動產生下一期重複案件，期限：${nextDeadline}`);
@@ -746,7 +751,7 @@ async function generateNextRecurrence(oldRowIndex, oldTaskId, recurFreq, oldDead
   }
 }
 
-async function copySubtasksToNextRecurrence(oldCaseId, newCaseId, oldDeadline, newDeadline) {
+async function copySubtasksToNextRecurrence(oldCaseId, newCaseId, oldDeadline, newDeadline, parentTitle = "") {
   try {
     const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!A2:E`, {
       headers: { Authorization: `Bearer ${accessToken}` }
@@ -773,7 +778,7 @@ async function copySubtasksToNextRecurrence(oldCaseId, newCaseId, oldDeadline, n
         newItemDeadline = `${newItemDate.getFullYear()}/${(newItemDate.getMonth()+1).toString().padStart(2,'0')}/${newItemDate.getDate().toString().padStart(2,'0')}`;
       }
       await appendSubtaskToSheet(newCaseId, content, newItemDeadline);
-      if (newItemDeadline) await createGoogleSubtask(newCaseId, content, newItemDeadline);
+      if (newItemDeadline) await createGoogleSubtask(newCaseId, content, newItemDeadline, parentTitle);
     }
   } catch (err) {
     console.error("複製子項目到下一期重複案件失敗:", err);
@@ -832,13 +837,13 @@ async function appendSubtaskToSheet(caseId, content, deadline) {
 }
 
 // 案件建立成功後：把 Modal 上填好的子項目清單，一次寫入 Sheets，有期限的順便同步到 Google Tasks
-async function saveSubtasksForNewCase(caseId) {
+async function saveSubtasksForNewCase(caseId, parentTitle = "") {
   const items = getSubtaskRowsData();
   if (items.length === 0) return;
   for (const item of items) {
     await appendSubtaskToSheet(caseId, item.content, item.deadline);
     if (item.deadline) {
-      await createGoogleSubtask(caseId, item.content, item.deadline);
+      await createGoogleSubtask(caseId, item.content, item.deadline, parentTitle);
     }
   }
   clearSubtaskRows();
@@ -929,7 +934,7 @@ async function addSubtaskFromDetailModal() {
   if (!currentEditingTaskId) { alert("這筆案件尚未同步到 Google Tasks，暫時無法建立子項目。"); return; }
 
   await appendSubtaskToSheet(currentEditingTaskId, content, deadline);
-  if (deadline) await createGoogleSubtask(currentEditingTaskId, content, deadline);
+  if (deadline) await createGoogleSubtask(currentEditingTaskId, content, deadline, currentEditingTitle);
 
   contentEl.value = "";
   deadlineEl.value = "";
@@ -1353,7 +1358,7 @@ document.getElementById("saveTaskBtn").addEventListener("click", async () => {
     
     if (result.updates) {
       // 💡 把 Modal 裡填好的子項目清單，一併寫入子項目清單工作表(有期限的會同步到 Google Tasks)
-      if (taskId) await saveSubtasksForNewCase(taskId);
+      if (taskId) await saveSubtasksForNewCase(taskId, displayTitle);
 
       alert("✅ 案件儲存成功！已同步至 Google Tasks。");
       document.getElementById("categorySelect").value = "";
@@ -2088,7 +2093,7 @@ async function updateTaskDetailAPI(rowIndex, newStatus, oldStatus, note, current
 
     // 💡 如果有填寫備註期限，且有寫備註內容，就建立子任務！
     if (note && noteDeadline && newTaskId) {
-      await createGoogleSubtask(newTaskId, note, noteDeadline);
+      await createGoogleSubtask(newTaskId, note, noteDeadline, displayTitle);
     }
 
     const fromStatus = oldStatus || newStatus;
