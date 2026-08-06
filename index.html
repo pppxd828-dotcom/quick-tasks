@@ -35,6 +35,23 @@
 
 <main class="max-w-7xl mx-auto px-4 mt-6">
 
+  <!-- 💡 今日/逾期子項目提醒：主表格只看得到主案件期限，這裡把所有案件底下「到期的子項目」集中列出來 -->
+  <section id="dueSubtasksSection" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <button type="button" onclick="toggleDueSubtasksSection()" class="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-800 transition">
+        <span id="dueSubtasksToggleIcon" class="text-xs text-slate-400 inline-block transition-transform rotate-90">▶</span>
+        <span>🔔 子項目待辦提醒</span>
+        <span id="dueSubtasksCount" class="hidden text-xs font-bold bg-rose-100 text-rose-600 rounded-full px-2 py-0.5">0</span>
+      </button>
+      <button type="button" onclick="loadDueSubtasksWidget()" class="text-xs text-slate-400 hover:text-slate-600">🔄 重新整理</button>
+    </div>
+    <div id="dueSubtasksCollapseWrapper">
+      <div id="dueSubtasksList" class="space-y-1 max-h-72 overflow-y-auto">
+        <div class="text-center text-xs text-slate-400 py-4">載入中...</div>
+      </div>
+    </div>
+  </section>
+
   <!-- 💡 期限甘特圖(時間軸) -->
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -1705,6 +1722,7 @@ async function loadTasksFromSheets() {
 
     renderGanttChart(ganttItems);
     renderTable();
+    loadDueSubtasksWidget(); // 💡 主表格資料重新整理後，子項目待辦提醒也跟著更新
 
   } catch (error) {
     console.error("載入失敗:", error);
@@ -1963,6 +1981,134 @@ function toggleGanttChart() {
     if (icon) icon.style.transform = "rotate(90deg)";
   }
 })();
+
+// ========================================================================
+// 💡 子項目待辦提醒：把所有案件底下「逾期」或「今天到期」的子項目集中列出來
+// ========================================================================
+function toggleDueSubtasksSection() {
+  const wrapper = document.getElementById("dueSubtasksCollapseWrapper");
+  const icon = document.getElementById("dueSubtasksToggleIcon");
+  if (!wrapper) return;
+  const willExpand = wrapper.classList.contains("hidden");
+  wrapper.classList.toggle("hidden");
+  if (icon) icon.style.transform = willExpand ? "rotate(90deg)" : "rotate(0deg)";
+  try { localStorage.setItem("dueSubtasksCollapsed", willExpand ? "0" : "1"); } catch (e) {}
+}
+
+(function initDueSubtasksCollapseState() {
+  // 💡 這個提醒區塊預設是「展開」的(跟甘特圖預設收合不同)，因為到期提醒比較急，希望一打開頁面就看得到
+  let collapsed = "0";
+  try { collapsed = localStorage.getItem("dueSubtasksCollapsed") || "0"; } catch (e) {}
+  if (collapsed === "1") {
+    const wrapper = document.getElementById("dueSubtasksCollapseWrapper");
+    const icon = document.getElementById("dueSubtasksToggleIcon");
+    if (wrapper) wrapper.classList.add("hidden");
+    if (icon) icon.style.transform = "rotate(0deg)";
+  }
+})();
+
+async function loadDueSubtasksWidget() {
+  const wrap = document.getElementById('dueSubtasksList');
+  if (!wrap) return;
+  if (!accessToken) { wrap.innerHTML = '<div class="text-center text-xs text-slate-400 py-4">請先登入</div>'; return; }
+
+  wrap.innerHTML = '<div class="text-center text-xs text-slate-400 py-4">載入中...</div>';
+
+  try {
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!A2:E`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
+
+    const items = [];
+    (data.values || []).forEach((row, i) => {
+      const caseId = row[0], content = row[1], deadline = row[2] || '';
+      const done = (row[3] || '').toString().toUpperCase() === 'TRUE';
+      if (!caseId || !content || done || !deadline) return;
+      if (deadline > todayStr) return; // 還沒到期，不用提醒
+
+      const task = (allTasksData || []).find(t => t.taskId === caseId);
+      if (task && task.status.includes('結案')) return; // 案件都結案了，子項目就不用再提醒
+
+      items.push({
+        rowIndex: i + 2,
+        caseId,
+        content,
+        deadline,
+        isOverdue: deadline < todayStr,
+        caseTitle: task ? task.title : '(案件已刪除或找不到)'
+      });
+    });
+
+    items.sort((a, b) => (a.deadline < b.deadline ? -1 : (a.deadline > b.deadline ? 1 : 0)));
+    renderDueSubtasksList(items);
+  } catch (err) {
+    console.error('載入待辦子項目失敗:', err);
+    wrap.innerHTML = '<div class="text-center text-xs text-rose-400 py-4">載入失敗，請稍後再試</div>';
+  }
+}
+
+function renderDueSubtasksList(items) {
+  const wrap = document.getElementById('dueSubtasksList');
+  const countEl = document.getElementById('dueSubtasksCount');
+  if (!wrap) return;
+
+  if (countEl) {
+    if (items.length > 0) {
+      countEl.textContent = items.length;
+      countEl.classList.remove('hidden');
+    } else {
+      countEl.classList.add('hidden');
+    }
+  }
+
+  if (items.length === 0) {
+    wrap.innerHTML = '<div class="text-center text-xs text-slate-400 py-4">目前沒有逾期或今天到期的子項目 🎉</div>';
+    return;
+  }
+
+  wrap.innerHTML = items.map(item => `
+    <div class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
+      <input type="checkbox" onchange="markDueSubtaskDone(${item.rowIndex}, this)" class="w-4 h-4 rounded text-blue-600 shrink-0" title="標記完成">
+      <span class="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${item.isOverdue ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}">${item.isOverdue ? '逾期' : '今天'}</span>
+      <button type="button" onclick="openTaskDetailByTaskId('${encodeURIComponent(item.caseId)}')" class="shrink-0 text-xs text-slate-400 hover:text-blue-600 underline decoration-dotted max-w-[140px] truncate" title="開啟這個案件">${escapeHtml(item.caseTitle)}</button>
+      <span class="text-sm text-slate-700 flex-1 truncate">${escapeHtml(item.content)}</span>
+      <span class="text-xs text-slate-400 shrink-0">${escapeHtml(item.deadline)}</span>
+    </div>
+  `).join('');
+}
+
+async function markDueSubtaskDone(rowIndex, checkboxEl) {
+  const row = checkboxEl.closest('div');
+  if (row) row.classList.add('opacity-40', 'line-through');
+  try {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!D${rowIndex}?valueInputOption=USER_ENTERED`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [['TRUE']] })
+    });
+    setTimeout(() => loadDueSubtasksWidget(), 400);
+  } catch (err) {
+    console.error('更新子項目完成狀態失敗:', err);
+  }
+}
+
+// 從子項目提醒清單點案件標題，直接開啟該案件的「案件處理」Modal
+function openTaskDetailByTaskId(encTaskId) {
+  const taskId = decodeURIComponent(encTaskId);
+  const task = (allTasksData || []).find(t => t.taskId === taskId);
+  if (!task) { alert('找不到這個案件的資料，可能狀態已變更，試著按「🔄 重新整理」看看。'); return; }
+  openTaskDetail(
+    task.rowIndex, task.status,
+    encodeURIComponent(task.historyLog), encodeURIComponent(task.tags), encodeURIComponent(task.category),
+    encodeURIComponent(task.vendor), encodeURIComponent(task.contact), encodeURIComponent(task.source),
+    encodeURIComponent(task.deadline), encodeURIComponent(task.assignee), encodeURIComponent(task.title),
+    encodeURIComponent(task.taskId), encodeURIComponent(task.recurFreq || '')
+  );
+}
 
 function escapeHtml(str) {
   const div = document.createElement('div');
