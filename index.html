@@ -318,7 +318,13 @@
         <input type="text" id="taskTitle" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="一句話描述這個任務...">
       </div>
       <div class="col-span-2">
-        <label class="block text-xs font-bold text-slate-500 mb-1">詳細說明與網址</label>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-bold text-slate-500">詳細說明與網址</label>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="polishTextWithGemini('taskDetails', 'taskDetailsAiBtn')" id="taskDetailsAiBtn" class="text-xs font-bold text-purple-600 hover:text-purple-800 transition flex items-center gap-1">✨ AI 優化說明</button>
+            <button type="button" onclick="promptGeminiApiKey()" class="text-slate-300 hover:text-slate-500 transition text-xs" title="設定 Gemini API Key">⚙️</button>
+          </div>
+        </div>
         <textarea id="taskDetails" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="貼上表單連結、錯誤訊息或備註..."></textarea>
       </div>
 
@@ -459,7 +465,13 @@
 
       <!-- 💡 執行說明與子任務區域 -->
       <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-        <label class="block text-sm font-bold text-blue-800 mb-2">💬 新增執行說明 (選填)</label>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-sm font-bold text-blue-800">💬 新增執行說明 (選填)</label>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="polishTextWithGemini('detailNote', 'detailNoteAiBtn')" id="detailNoteAiBtn" class="text-xs font-bold text-purple-600 hover:text-purple-800 transition flex items-center gap-1">✨ AI 優化說明</button>
+            <button type="button" onclick="promptGeminiApiKey()" class="text-slate-300 hover:text-slate-500 transition text-xs" title="設定 Gemini API Key">⚙️</button>
+          </div>
+        </div>
         <textarea id="detailNote" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 placeholder-slate-400 mb-3" placeholder="請描述目前的進度、遇到的問題，或與客戶確認的結果..."></textarea>
         
         <div class="flex items-center gap-3">
@@ -553,6 +565,30 @@
     </div>
     <div id="handoverTableWrap" class="p-4 overflow-auto flex-1">
       <div class="text-center text-xs text-slate-400 py-10">選好日期範圍後，按「產生報表」</div>
+    </div>
+  </div>
+</div>
+
+<!-- 💡 Gemini API Key 設定 Modal -->
+<div id="geminiKeyModal" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[70] p-4">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+    <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+      <h3 class="font-bold text-slate-800">✨ 設定 Gemini API Key</h3>
+      <button onclick="closeGeminiKeyModal()" class="text-slate-400 hover:text-rose-500 transition text-xl font-bold">&times;</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <p class="text-xs text-slate-500 leading-relaxed">
+        要使用「✨ AI 優化說明」功能，需要一組免費的 Gemini API Key。
+        到 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="text-blue-600 underline">Google AI Studio</a> 用你的 Google 帳號登入，按「Create API key」就可以取得。
+      </p>
+      <input type="password" id="geminiKeyInput" placeholder="貼上你的 API Key..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+      <p class="text-xs text-slate-400 leading-relaxed">
+        🔒 這組 Key 只會存在<b>這台瀏覽器</b>裡（localStorage），不會被寫進網頁原始碼、也不會上傳到 GitHub，其他人開這個網站不會看到你的 Key，但也代表換一台電腦要重新輸入一次。
+      </p>
+    </div>
+    <div class="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+      <button type="button" onclick="closeGeminiKeyModal()" class="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-200 rounded-lg font-bold transition">取消</button>
+      <button type="button" onclick="saveGeminiApiKey()" class="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-sm transition">儲存</button>
     </div>
   </div>
 </div>
@@ -1503,6 +1539,106 @@ function exportHandoverToExcel() {
   const start = document.getElementById('handoverStart').value;
   const end = document.getElementById('handoverEnd').value;
   XLSX.writeFile(wb, `工作交接表_${start}_${end}.xlsx`);
+}
+
+// ========================================================================
+// 💡 AI 優化說明：串接 Gemini API，幫忙把「詳細說明」「執行說明」的文字潤飾得更清楚
+//    Key 只存在使用者自己瀏覽器的 localStorage，不會寫進網頁原始碼裡
+// ========================================================================
+const GEMINI_MODEL = "gemini-flash-latest"; // 官方會自動指向目前最新、最穩定的 Flash 模型
+
+function getGeminiApiKey() {
+  return localStorage.getItem("gemini_api_key") || "";
+}
+
+function promptGeminiApiKey() {
+  document.getElementById("geminiKeyInput").value = getGeminiApiKey();
+  document.getElementById("geminiKeyModal").classList.remove("hidden");
+}
+
+function closeGeminiKeyModal() {
+  document.getElementById("geminiKeyModal").classList.add("hidden");
+}
+
+function saveGeminiApiKey() {
+  const key = document.getElementById("geminiKeyInput").value.trim();
+  if (!key) { alert("請輸入 API Key，或按取消。"); return; }
+  localStorage.setItem("gemini_api_key", key);
+  closeGeminiKeyModal();
+  alert("✅ 已儲存！現在可以使用「✨ AI 優化說明」了。");
+}
+
+async function callGeminiAPI(promptText, apiKey) {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData?.error?.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("沒有收到有效的回應內容，可能是被安全機制擋下來了");
+  return text.trim();
+}
+
+// textareaId = 要優化的欄位, btnId = 觸發的按鈕(用來顯示載入中狀態)
+async function polishTextWithGemini(textareaId, btnId) {
+  const textarea = document.getElementById(textareaId);
+  const original = textarea.value.trim();
+  if (!original) { alert("請先輸入一些內容，我才有東西可以幫你優化喔！"); return; }
+
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) { promptGeminiApiKey(); return; }
+
+  const btn = document.getElementById(btnId);
+  const btnOriginalText = btn.textContent;
+  btn.textContent = "✨ 優化中...";
+  btn.disabled = true;
+
+  const promptText = `你是專業的中文商務文件編輯，請把以下這段工作說明潤飾得更清楚、更專業、更簡潔。務必保留原文所有的事實細節、網址、代號、日期、數字，不要新增原文沒有的資訊，也不要加任何說明文字或前後綴，直接輸出潤飾後的內容就好：\n\n${original}`;
+
+  try {
+    const result = await callGeminiAPI(promptText, apiKey);
+    textarea.dataset.beforeAiPolish = original; // 存起來，之後可以復原
+    textarea.value = result;
+    showAiPolishUndoHint(textareaId);
+  } catch (err) {
+    console.error("Gemini 優化失敗:", err);
+    if (/api.?key/i.test(err.message)) {
+      alert("AI 優化失敗：API Key 似乎不正確，請重新設定一次。");
+      promptGeminiApiKey();
+    } else {
+      alert("AI 優化失敗：" + err.message);
+    }
+  } finally {
+    btn.textContent = btnOriginalText;
+    btn.disabled = false;
+  }
+}
+
+function showAiPolishUndoHint(textareaId) {
+  const hintId = textareaId + "_aiHint";
+  let hint = document.getElementById(hintId);
+  if (!hint) {
+    hint = document.createElement("div");
+    hint.id = hintId;
+    hint.className = "text-xs text-purple-500 mt-1 flex items-center gap-1";
+    document.getElementById(textareaId).insertAdjacentElement("afterend", hint);
+  }
+  hint.innerHTML = `✨ 已套用 AI 優化建議　<button type="button" onclick="undoAiPolish('${textareaId}')" class="underline hover:text-purple-700 font-bold">↩️ 復原成原文</button>`;
+}
+
+function undoAiPolish(textareaId) {
+  const textarea = document.getElementById(textareaId);
+  if (textarea.dataset.beforeAiPolish !== undefined) {
+    textarea.value = textarea.dataset.beforeAiPolish;
+    delete textarea.dataset.beforeAiPolish;
+  }
+  const hint = document.getElementById(textareaId + "_aiHint");
+  if (hint) hint.remove();
 }
 
 
