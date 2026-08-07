@@ -599,37 +599,91 @@ document.getElementById("openModalBtn").addEventListener("click", () => {
 document.getElementById("closeModalBtn").addEventListener("click", () => modal.classList.add("hidden"));
 document.getElementById("cancelBtn").addEventListener("click", () => modal.classList.add("hidden"));
 
-window.addEventListener("load", () => {
-  const savedToken = localStorage.getItem("google_access_token");
-  if (savedToken) {
-    accessToken = savedToken;
-    setLoggedInUI(true);
+let tokenExpiryTime = 0;           // Token 到期時間戳記(ms)
+let silentRefreshTimer = null;
+let suppressReloadOnNextToken = false; // 背景靜默換發成功時，不要再重新整理整個表格(避免使用者正在看的東西被打斷)
+
+function saveTokenWithExpiry(token, expiresInSeconds) {
+  accessToken = token;
+  tokenExpiryTime = Date.now() + (expiresInSeconds ? expiresInSeconds * 1000 : 3600 * 1000);
+  localStorage.setItem("google_access_token", token);
+  localStorage.setItem("google_token_expiry", String(tokenExpiryTime));
+}
+
+function clearSavedToken() {
+  accessToken = null;
+  tokenExpiryTime = 0;
+  localStorage.removeItem("google_access_token");
+  localStorage.removeItem("google_token_expiry");
+  if (silentRefreshTimer) { clearInterval(silentRefreshTimer); silentRefreshTimer = null; }
+}
+
+// 每分鐘檢查一次：Token 剩不到 5 分鐘就在背景悄悄換一個新的，使用者完全不會被打斷
+function startSilentTokenRefresh() {
+  if (silentRefreshTimer) clearInterval(silentRefreshTimer);
+  silentRefreshTimer = setInterval(() => {
+    if (!accessToken || !tokenClient) return;
+    if (tokenExpiryTime - Date.now() < 5 * 60 * 1000) {
+      suppressReloadOnNextToken = true;
+      tokenClient.requestAccessToken({ prompt: "" }); // 空字串 = 盡量不跳出任何視窗，悄悄換發
+    }
+  }, 60 * 1000);
+}
+
+function handleTokenResponse(resp) {
+  const shouldReload = !suppressReloadOnNextToken;
+  suppressReloadOnNextToken = false;
+
+  if (resp.error) {
+    // 💡 靜默換發失敗(通常是太久沒開網頁、連 Google 的登入狀態都過期了)，
+    //    安靜地切回登出畫面就好，不要用 alert 打斷使用者，讓他自己按登入即可
+    clearSavedToken();
+    setLoggedInUI(false);
+    if (shouldReload) alert("登入失敗：" + resp.error); // 只有「使用者自己按登入」失敗時才提示
+    return;
+  }
+
+  saveTokenWithExpiry(resp.access_token, resp.expires_in);
+  setLoggedInUI(true);
+  startSilentTokenRefresh();
+  if (shouldReload) {
     loadSettingsFromSheets();
     loadTasksFromSheets();
   }
+}
+
+window.addEventListener("load", () => {
+  const savedToken = localStorage.getItem("google_access_token");
+  const savedExpiry = parseInt(localStorage.getItem("google_token_expiry") || "0", 10);
 
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
-    callback: (resp) => {
-      if (resp.error) return alert("登入失敗：" + resp.error);
-      accessToken = resp.access_token;
-      localStorage.setItem("google_access_token", accessToken);
-      setLoggedInUI(true);
-      loadSettingsFromSheets();
-      loadTasksFromSheets();
-    },
+    callback: handleTokenResponse,
   });
+
+  if (savedToken && savedExpiry > Date.now()) {
+    // 💡 Token 還沒過期，直接沿用，不用重新登入
+    accessToken = savedToken;
+    tokenExpiryTime = savedExpiry;
+    setLoggedInUI(true);
+    startSilentTokenRefresh();
+    loadSettingsFromSheets();
+    loadTasksFromSheets();
+  } else if (savedToken) {
+    // 💡 Token 已經過期了：先顯示「登入中」的畫面，然後在背景嘗試悄悄換一個新的，
+    //    通常只要瀏覽器裡的 Google 登入狀態還在，就不會跳出任何視窗，使用者完全不用重新按登入
+    setLoggedInUI(true);
+    tokenClient.requestAccessToken({ prompt: "" });
+  }
 
   document.getElementById("loginBtn").addEventListener("click", () => tokenClient.requestAccessToken({ prompt: "consent" }));
   
   document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.removeItem("google_access_token");
-    if (accessToken) {
-      google.accounts.oauth2.revoke(accessToken, () => { 
-        accessToken = null; 
-        setLoggedInUI(false); 
-      });
+    const tokenToRevoke = accessToken;
+    clearSavedToken();
+    if (tokenToRevoke) {
+      google.accounts.oauth2.revoke(tokenToRevoke, () => { setLoggedInUI(false); });
     } else {
       setLoggedInUI(false);
     }
