@@ -29,6 +29,8 @@
       <button id="loginBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition">☁️ 雲端同步登入</button>
       <button id="logoutBtn" class="hidden px-4 py-2 rounded-md bg-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-600 transition">登出</button>
       <button id="openModalBtn" class="hidden px-4 py-2 rounded-md bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition shadow-sm">+ 新增案件</button>
+      <button id="importJsonBtn" class="hidden px-4 py-2 rounded-md bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition shadow-sm">📥 匯入 JSON</button>
+      <input type="file" id="importJsonInput" accept=".json,application/json" class="hidden">
     </div>
   </div>
 </header>
@@ -730,6 +732,7 @@ function setLoggedInUI(loggedIn) {
   document.getElementById("loginBtn").classList.toggle("hidden", loggedIn);
   document.getElementById("logoutBtn").classList.toggle("hidden", !loggedIn);
   document.getElementById("openModalBtn").classList.toggle("hidden", !loggedIn);
+  document.getElementById("importJsonBtn").classList.toggle("hidden", !loggedIn);
   document.getElementById("userStatus").textContent = loggedIn ? "✅ 已連線至資料庫" : "";
 }
 
@@ -1804,6 +1807,133 @@ document.getElementById("saveTaskBtn").addEventListener("click", async () => {
     btn.textContent = "儲存案件";
     btn.disabled = false;
   }
+});
+
+
+// ========================================================================
+// 📥 JSON 匯入：讀取 Gemini 產生的 JSON，逐筆照「新增案件」流程建立
+//    格式：{ "tasks": [ { category, contact, source, title, details, deadline,
+//            tags, vendor, assignee, recurFreq, subtasks:[{content, deadline}] } ] }
+// ========================================================================
+function normalizeImportDate(v) {
+  if (!v) return "";
+  const m = String(v).trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if (!m) return null; // 格式錯誤
+  return `${m[1]}/${m[2].padStart(2,'0')}/${m[3].padStart(2,'0')}`;
+}
+
+function validateImportTasks(raw) {
+  const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.tasks) ? raw.tasks : null);
+  if (!list) throw new Error("找不到 tasks 陣列，請確認 JSON 格式。");
+  const errors = [];
+  const tasks = list.map((t, i) => {
+    const n = i + 1;
+    const title = String(t.title || "").trim();
+    if (!title) errors.push(`第 ${n} 筆：缺少 title`);
+    const deadline = normalizeImportDate(t.deadline);
+    if (deadline === null) errors.push(`第 ${n} 筆：deadline 格式錯誤（${t.deadline}）`);
+    let recurFreq = String(t.recurFreq || "").trim();
+    if (recurFreq && !["每月","每季","每年"].includes(recurFreq)) errors.push(`第 ${n} 筆：recurFreq 只能是 每月/每季/每年`);
+    if (recurFreq && !deadline) errors.push(`第 ${n} 筆：重複性案件必須有 deadline`);
+    const subtasks = (Array.isArray(t.subtasks) ? t.subtasks : []).map((st, j) => {
+      const d = normalizeImportDate(st.deadline);
+      if (d === null) errors.push(`第 ${n} 筆子項目 ${j + 1}：deadline 格式錯誤`);
+      return { content: String(st.content || "").trim(), deadline: d || "" };
+    }).filter(st => st.content);
+    return {
+      category: String(t.category || "").trim(),
+      contact: String(t.contact || "").trim(),
+      source: String(t.source || "").trim(),
+      title,
+      details: String(t.details || ""),
+      deadline: deadline || "",
+      tags: String(t.tags || "").trim(),
+      vendor: String(t.vendor || "").trim() || "無",
+      assignee: String(t.assignee || "").trim(),
+      recurFreq,
+      subtasks
+    };
+  });
+  return { tasks, errors };
+}
+
+async function importOneTask(t) {
+  const displayTitle = t.category ? `[${t.category}] ${t.title}` : t.title;
+  const taskId = await syncGoogleTask("", displayTitle, t.details, t.deadline, "待處理");
+  const now = new Date().toLocaleString('zh-TW');
+  const c = new Date();
+  const createdTimeStr = `${c.getFullYear()}/${(c.getMonth()+1).toString().padStart(2,'0')}/${c.getDate().toString().padStart(2,'0')} ${c.getHours().toString().padStart(2,'0')}:${c.getMinutes().toString().padStart(2,'0')}`;
+  const initialLog = `[${createdTimeStr}] 案件建立（狀態：待處理，JSON 匯入）`;
+  const rowData = ["待處理", t.category, t.contact, t.source, t.title, t.details, t.deadline, now, now, initialLog, t.tags, t.vendor, t.assignee, taskId || "", t.recurFreq];
+
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:O:append?valueInputOption=USER_ENTERED`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ values: [rowData] })
+  });
+  const result = await res.json();
+  if (!result.updates) throw new Error(result?.error?.message || "寫入案件總表失敗");
+
+  let subtaskSkipped = false;
+  if (t.subtasks.length) {
+    if (!taskId) subtaskSkipped = true; // 子項目要掛在 Task ID 底下，沒有就無法建立
+    else for (const st of t.subtasks) {
+      await appendSubtaskToSheet(taskId, st.content, st.deadline);
+      if (st.deadline) await createGoogleSubtask(taskId, st.content, st.deadline, displayTitle);
+    }
+  }
+  return { subtaskSkipped };
+}
+
+async function handleImportJsonFile(file) {
+  if (!accessToken) return alert("請先登入！");
+  let parsed;
+  try {
+    const text = (await file.text()).replace(/^\uFEFF/, "").trim()
+      .replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, ""); // 容許 Gemini 多包的 ``` 區塊
+    parsed = JSON.parse(text);
+  } catch (e) {
+    return alert("❌ 無法解析 JSON：" + e.message);
+  }
+
+  let tasks, errors;
+  try { ({ tasks, errors } = validateImportTasks(parsed)); }
+  catch (e) { return alert("❌ " + e.message); }
+  if (errors.length) return alert("❌ 資料有誤，未匯入任何案件：\n\n" + errors.join("\n"));
+  if (!tasks.length) return alert("檔案裡沒有案件。");
+
+  const preview = tasks.map((t, i) => `${i + 1}. ${t.category ? `[${t.category}] ` : ""}${t.title}${t.deadline ? `（${t.deadline}）` : ""}${t.subtasks.length ? `，子項目 ${t.subtasks.length}` : ""}`).join("\n");
+  if (!confirm(`即將匯入 ${tasks.length} 筆案件：\n\n${preview}\n\n確定匯入？`)) return;
+
+  const btn = document.getElementById("importJsonBtn");
+  btn.disabled = true;
+  const ok = [], failed = [], noSub = [];
+  for (let i = 0; i < tasks.length; i++) {
+    btn.textContent = `匯入中 ${i + 1}/${tasks.length}...`;
+    try {
+      const r = await importOneTask(tasks[i]);
+      ok.push(tasks[i].title);
+      if (r.subtaskSkipped) noSub.push(tasks[i].title);
+    } catch (e) {
+      console.error("匯入失敗:", tasks[i], e);
+      failed.push(`${tasks[i].title}：${e.message}`);
+    }
+  }
+  btn.textContent = "📥 匯入 JSON";
+  btn.disabled = false;
+
+  let msg = `✅ 成功匯入 ${ok.length} 筆`;
+  if (failed.length) msg += `\n\n❌ 失敗 ${failed.length} 筆：\n${failed.join("\n")}`;
+  if (noSub.length) msg += `\n\n⚠️ 以下案件未同步到 Google Tasks，所以子項目沒有建立：\n${noSub.join("\n")}`;
+  alert(msg);
+  loadTasksFromSheets();
+}
+
+document.getElementById("importJsonBtn").addEventListener("click", () => document.getElementById("importJsonInput").click());
+document.getElementById("importJsonInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = ""; // 同一個檔案可重複選
+  if (file) await handleImportJsonFile(file);
 });
 
 async function loadTasksFromSheets() {
