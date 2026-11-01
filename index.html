@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>專屬雜事追蹤管理系統</title>
+<title>姑姑毛毛</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -29,8 +29,6 @@
       <button id="loginBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition">☁️ 雲端同步登入</button>
       <button id="logoutBtn" class="hidden px-4 py-2 rounded-md bg-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-600 transition">登出</button>
       <button id="openModalBtn" class="hidden px-4 py-2 rounded-md bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition shadow-sm">+ 新增案件</button>
-      <button id="importJsonBtn" class="hidden px-4 py-2 rounded-md bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition shadow-sm">📥 匯入 JSON</button>
-      <input type="file" id="importJsonInput" accept=".json,application/json" class="hidden">
     </div>
   </div>
 </header>
@@ -213,6 +211,7 @@
             </label>
           </div>
         </div>
+        <button type="button" onclick="openSmartImportModal()" class="px-3 py-1.5 text-sm font-bold text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 transition">✨ 智慧匯入</button>
         <button type="button" onclick="openHandoverModal()" class="px-3 py-1.5 text-sm font-bold text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 transition">📤 工作交接</button>
         <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100 transition">📥 匯出 Excel</button>
       </div>
@@ -571,6 +570,51 @@
   </div>
 </div>
 
+<!-- 💡 智慧匯入 Modal：貼上雜事 → AI 整理 → 預覽微調 → 一鍵匯入 -->
+<div id="smartImportModal" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[60] p-4">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+      <div>
+        <h3 class="font-bold text-slate-800">✨ 智慧匯入</h3>
+        <p id="smartImportStepHint" class="text-xs text-slate-400 mt-0.5">步驟 1／2：貼上今天遇到的雜事</p>
+      </div>
+      <button onclick="closeSmartImportModal()" class="text-slate-400 hover:text-rose-500 transition text-xl font-bold">&times;</button>
+    </div>
+
+    <!-- 步驟 1：貼上內容 -->
+    <div id="smartImportStep1" class="p-5 space-y-3 overflow-y-auto">
+      <textarea id="smartImportText" rows="10" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-y" placeholder="隨手貼就好，不用整理。例如：&#10;&#10;三商說ATM讀卡機週三要換，要記得通知分行&#10;迪堡那邊 5.01 版本下週五前要回覆&#10;下個月要交合約用印文件，找法務確認..."></textarea>
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-3 text-xs">
+          <label class="text-slate-500 hover:text-slate-700 cursor-pointer font-bold">📎 上傳 .txt / .csv / .json
+            <input type="file" accept=".txt,.csv,.json,.md" class="hidden" onchange="loadSmartImportFile(this)">
+          </label>
+          <button type="button" onclick="copySmartImportPrompt()" class="text-slate-500 hover:text-slate-700 font-bold">📋 複製提示詞(給 Gemini 網頁版用)</button>
+          <button type="button" onclick="promptGeminiApiKey()" class="text-slate-300 hover:text-slate-500" title="設定 Gemini API Key">⚙️</button>
+        </div>
+        <button type="button" id="smartImportParseBtn" onclick="runSmartImportParse()" class="px-5 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-sm transition">✨ 用 AI 整理</button>
+      </div>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        💡 AI 會自動拆成一筆一筆的案件、抓出期限、把大案件拆成子項目，並對應你現有的類別／廠商／處理人選項。整理完會先給你預覽，確認沒問題才會真的寫入。<br>
+        如果你已經在 Gemini 網頁版整理好、拿到 JSON，直接貼在上面按「整理」也可以，系統會自動辨識、不會再呼叫 AI。
+      </p>
+    </div>
+
+    <!-- 步驟 2：預覽與微調 -->
+    <div id="smartImportStep2" class="hidden flex-col flex-1 min-h-0">
+      <div class="px-5 py-2 border-b border-slate-100 flex items-center justify-between bg-white">
+        <span id="smartImportSummary" class="text-xs text-slate-500"></span>
+        <span class="text-xs text-slate-400">可以直接修改欄位，取消勾選的不會匯入</span>
+      </div>
+      <div id="smartImportPreviewList" class="p-4 overflow-y-auto space-y-3 flex-1 bg-slate-50"></div>
+      <div class="px-5 py-3 border-t border-slate-100 bg-white flex justify-between items-center gap-2">
+        <button type="button" onclick="backToSmartImportStep1()" class="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg font-bold transition">← 返回修改</button>
+        <button type="button" id="smartImportConfirmBtn" onclick="confirmSmartImport()" class="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-sm transition">匯入案件</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 💡 Gemini API Key 設定 Modal -->
 <div id="geminiKeyModal" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[70] p-4">
   <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
@@ -732,7 +776,6 @@ function setLoggedInUI(loggedIn) {
   document.getElementById("loginBtn").classList.toggle("hidden", loggedIn);
   document.getElementById("logoutBtn").classList.toggle("hidden", !loggedIn);
   document.getElementById("openModalBtn").classList.toggle("hidden", !loggedIn);
-  document.getElementById("importJsonBtn").classList.toggle("hidden", !loggedIn);
   document.getElementById("userStatus").textContent = loggedIn ? "✅ 已連線至資料庫" : "";
 }
 
@@ -1545,6 +1588,258 @@ function exportHandoverToExcel() {
 }
 
 // ========================================================================
+// ✨ 智慧匯入：貼上雜事 → Gemini 整理成結構化案件 → 預覽微調 → 一鍵匯入
+// ========================================================================
+let smartImportItems = [];
+let smartImportOptions = { categories: [], vendors: [], assignees: [] };
+
+function getSelectOptionValues(selectId) {
+  return Array.from(document.querySelectorAll(`#${selectId} option`)).map(o => o.value).filter(v => v && v !== "載入中...");
+}
+
+function openSmartImportModal() {
+  if (!accessToken) { alert("請先登入！"); return; }
+  smartImportOptions = {
+    categories: getSelectOptionValues("categorySelect"),
+    vendors: getSelectOptionValues("vendorSelect"),
+    assignees: getSelectOptionValues("newTaskAssignee")
+  };
+  backToSmartImportStep1();
+  document.getElementById("smartImportModal").classList.remove("hidden");
+}
+
+function closeSmartImportModal() {
+  document.getElementById("smartImportModal").classList.add("hidden");
+}
+
+function backToSmartImportStep1() {
+  document.getElementById("smartImportStep1").classList.remove("hidden");
+  document.getElementById("smartImportStep2").classList.add("hidden");
+  document.getElementById("smartImportStep2").classList.remove("flex");
+  document.getElementById("smartImportStepHint").textContent = "步驟 1／2：貼上今天遇到的雜事";
+}
+
+function loadSmartImportFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { document.getElementById("smartImportText").value = reader.result; };
+  reader.readAsText(file, "UTF-8");
+  input.value = "";
+}
+
+function buildSmartImportPrompt(rawText) {
+  const now = new Date();
+  const weekday = ["日", "一", "二", "三", "四", "五", "六"][now.getDay()];
+  const todayStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
+  const o = smartImportOptions.categories.length ? smartImportOptions : {
+    categories: getSelectOptionValues("categorySelect"),
+    vendors: getSelectOptionValues("vendorSelect"),
+    assignees: getSelectOptionValues("newTaskAssignee")
+  };
+  const list = (arr) => arr.length ? arr.map(v => `「${v}」`).join("、") : "(無，請留空字串)";
+  return `你是我的工作助理，負責把我每天零散的雜事整理成可匯入追蹤系統的案件清單。
+今天是 ${todayStr}（星期${weekday}），遇到「明天、下週三、月底」這類相對日期，請換算成實際日期。
+
+【輸出規則】
+1. 只輸出一個 JSON 陣列，不要有任何說明文字、不要用 markdown 程式碼區塊。
+2. 每個獨立的事情是一個物件，欄位固定如下（缺資料就給空字串，不要自己編造）：
+   - "title"：一句話摘要，30 字內，動詞開頭更好
+   - "category"：只能從這些選一個，沒有適合的就給空字串：${list(o.categories)}
+   - "vendor"：只能從這些選一個，沒提到廠商就給 "無"：${list(o.vendors)}
+   - "assignee"：只能從這些選一個，沒提到就給空字串：${list(o.assignees)}
+   - "deadline"：最後期限，格式 YYYY/MM/DD；沒提到期限就給空字串
+   - "details"：保留原文提到的細節、網址、代號、數字，不要新增原文沒有的資訊
+   - "tags"：最多 3 個短標籤，用逗號分隔
+   - "subtasks"：如果一件事明顯要分成幾個步驟，拆成陣列 [{"content":"步驟內容","deadline":"YYYY/MM/DD 或空字串"}]；不需要拆就給 []
+3. 同一件事不要重複；彼此不相關的事情不要硬併在一起。
+
+【我今天的雜事】
+${rawText}`;
+}
+
+function copySmartImportPrompt() {
+  const raw = document.getElementById("smartImportText").value.trim() || "(把你今天的雜事貼在這裡)";
+  navigator.clipboard.writeText(buildSmartImportPrompt(raw)).then(() => {
+    alert("✅ 提示詞已複製！貼到 Gemini 網頁版送出，再把它回覆的 JSON 貼回這裡按「用 AI 整理」就能匯入。");
+  }).catch(() => alert("複製失敗，請稍後再試。"));
+}
+
+function parseSmartImportJson(text) {
+  let t = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+  if (!/^[\[{]/.test(t)) return null;
+  try {
+    let data = JSON.parse(t);
+    if (!Array.isArray(data)) data = data.cases || data.tasks || data.items || [data];
+    return Array.isArray(data) ? data : null;
+  } catch (e) { return null; }
+}
+
+function normalizeSmartImportItems(rawItems) {
+  const o = smartImportOptions;
+  const normDate = (v) => {
+    const d = String(v || "").trim().replace(/-/g, "/");
+    return /^\d{4}\/\d{1,2}\/\d{1,2}$/.test(d)
+      ? d.split("/").map((x, i) => i === 0 ? x : x.padStart(2, "0")).join("/") : "";
+  };
+  const pick = (v, list) => list.includes(v) ? v : "";
+  return rawItems.filter(r => r && (r.title || r["任務摘要"])).map(r => ({
+    include: true,
+    title: String(r.title || r["任務摘要"] || "").trim(),
+    category: pick(r.category || r["類別"], o.categories),
+    vendor: pick(r.vendor || r["廠商"], o.vendors) || "無",
+    assignee: pick(r.assignee || r["處理人"], o.assignees),
+    deadline: normDate(r.deadline || r["期限"]),
+    details: String(r.details || r["詳細說明"] || "").trim(),
+    tags: String(r.tags || r["標籤"] || "").trim(),
+    subtasks: (Array.isArray(r.subtasks) ? r.subtasks : []).filter(x => x && x.content).map(x => ({
+      content: String(x.content).trim(), deadline: normDate(x.deadline)
+    }))
+  }));
+}
+
+async function runSmartImportParse() {
+  const raw = document.getElementById("smartImportText").value.trim();
+  if (!raw) { alert("先貼上一些內容喔！"); return; }
+
+  // 已經是 JSON(例如從 Gemini 網頁版貼回來)：直接解析，不再呼叫 AI
+  let parsed = parseSmartImportJson(raw);
+
+  if (!parsed) {
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) { promptGeminiApiKey(); return; }
+    const btn = document.getElementById("smartImportParseBtn");
+    const old = btn.textContent;
+    btn.textContent = "✨ 整理中...";
+    btn.disabled = true;
+    try {
+      const resText = await callGeminiAPI(buildSmartImportPrompt(raw), apiKey, { responseMimeType: "application/json" });
+      parsed = parseSmartImportJson(resText);
+      if (!parsed) throw new Error("AI 回傳的格式無法解析，請再試一次，或把內容拆短一點");
+    } catch (err) {
+      console.error("智慧匯入失敗:", err);
+      alert("AI 整理失敗：" + err.message);
+      return;
+    } finally {
+      btn.textContent = old;
+      btn.disabled = false;
+    }
+  }
+
+  smartImportItems = normalizeSmartImportItems(parsed);
+  if (smartImportItems.length === 0) { alert("沒有整理出任何案件，請確認內容或換個寫法再試一次。"); return; }
+  renderSmartImportPreview();
+  document.getElementById("smartImportStep1").classList.add("hidden");
+  document.getElementById("smartImportStep2").classList.remove("hidden");
+  document.getElementById("smartImportStep2").classList.add("flex");
+  document.getElementById("smartImportStepHint").textContent = "步驟 2／2：確認內容，沒問題就匯入";
+}
+
+function updateSmartItem(i, field, value) {
+  smartImportItems[i][field] = value;
+  if (field === "include") updateSmartImportCount();
+}
+function updateSmartSub(i, j, field, value) {
+  smartImportItems[i].subtasks[j][field] = field === "deadline" ? value.replace(/-/g, "/") : value;
+}
+function removeSmartSub(i, j) {
+  smartImportItems[i].subtasks.splice(j, 1);
+  renderSmartImportPreview();
+}
+function updateSmartImportCount() {
+  const n = smartImportItems.filter(x => x.include).length;
+  document.getElementById("smartImportSummary").textContent = `共整理出 ${smartImportItems.length} 筆案件，已勾選 ${n} 筆`;
+  document.getElementById("smartImportConfirmBtn").textContent = `匯入 ${n} 筆案件`;
+}
+
+function renderSmartImportPreview() {
+  const o = smartImportOptions;
+  const selectHtml = (i, field, list, current, emptyLabel) => {
+    const warn = !current && field !== "assignee" ? "border-amber-400 bg-amber-50" : "border-slate-300";
+    return `<select onchange="updateSmartItem(${i}, '${field}', this.value)" class="w-full border ${warn} rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500">
+      <option value="">${emptyLabel}</option>
+      ${list.map(v => `<option value="${escapeHtml(v)}" ${v === current ? "selected" : ""}>${escapeHtml(v)}</option>`).join("")}
+    </select>`;
+  };
+
+  document.getElementById("smartImportPreviewList").innerHTML = smartImportItems.map((it, i) => `
+    <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+      <div class="flex items-center gap-2">
+        <input type="checkbox" ${it.include ? "checked" : ""} onchange="updateSmartItem(${i}, 'include', this.checked)" class="w-4 h-4 rounded text-blue-600 shrink-0">
+        <input type="text" value="${escapeHtml(it.title)}" oninput="updateSmartItem(${i}, 'title', this.value)" class="flex-1 border border-slate-300 rounded px-2 py-1 text-sm font-bold outline-none focus:ring-1 focus:ring-blue-500">
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pl-6">
+        <div><div class="text-[10px] text-slate-400 mb-0.5">專案類別</div>${selectHtml(i, "category", o.categories, it.category, "(未指定)")}</div>
+        <div><div class="text-[10px] text-slate-400 mb-0.5">負責廠商</div>${selectHtml(i, "vendor", o.vendors, it.vendor, "(未指定)")}</div>
+        <div><div class="text-[10px] text-slate-400 mb-0.5">處理人</div>${selectHtml(i, "assignee", o.assignees, it.assignee, "(未指定)")}</div>
+        <div><div class="text-[10px] text-slate-400 mb-0.5">最後期限</div>
+          <input type="date" value="${it.deadline ? it.deadline.replace(/\//g, "-") : ""}" onchange="updateSmartItem(${i}, 'deadline', this.value.replace(/-/g, '/'))" class="w-full border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500"></div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pl-6">
+        <textarea rows="2" oninput="updateSmartItem(${i}, 'details', this.value)" placeholder="詳細說明" class="md:col-span-2 border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500 resize-none">${escapeHtml(it.details)}</textarea>
+        <input type="text" value="${escapeHtml(it.tags)}" oninput="updateSmartItem(${i}, 'tags', this.value)" placeholder="標籤，用逗號分隔" class="border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500 self-start">
+      </div>
+      ${it.subtasks.length ? `<div class="pl-6 space-y-1">
+        <div class="text-[10px] text-slate-400">✅ 子項目 (${it.subtasks.length})</div>
+        ${it.subtasks.map((sub, j) => `<div class="flex items-center gap-2">
+          <span class="text-slate-300 text-xs">└</span>
+          <input type="text" value="${escapeHtml(sub.content)}" oninput="updateSmartSub(${i}, ${j}, 'content', this.value)" class="flex-1 border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500">
+          <input type="date" value="${sub.deadline ? sub.deadline.replace(/\//g, "-") : ""}" onchange="updateSmartSub(${i}, ${j}, 'deadline', this.value)" class="w-32 border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500">
+          <button type="button" onclick="removeSmartSub(${i}, ${j})" class="text-slate-300 hover:text-rose-500 text-xs" title="移除這個子項目">✕</button>
+        </div>`).join("")}
+      </div>` : ""}
+    </div>`).join("");
+  updateSmartImportCount();
+}
+
+// 把一筆整理好的資料寫成正式案件(含 Google Tasks 同步與子項目)
+async function createCaseFromData(d) {
+  const displayTitle = d.category ? `[${d.category}] ${d.title}` : d.title;
+  const taskId = await syncGoogleTask("", displayTitle, d.details, d.deadline, "待處理");
+  const c = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const createdStr = `${c.getFullYear()}/${pad(c.getMonth() + 1)}/${pad(c.getDate())} ${pad(c.getHours())}:${pad(c.getMinutes())}`;
+  const initialLog = `[${createdStr}] 案件建立（狀態：待處理，由智慧匯入建立）`;
+  const now = c.toLocaleString("zh-TW");
+  const rowData = ["待處理", d.category, "", "", d.title, d.details, d.deadline, now, now, initialLog, d.tags, d.vendor || "無", d.assignee, taskId, ""];
+
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:O:append?valueInputOption=USER_ENTERED`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ values: [rowData] })
+  });
+  const result = await res.json();
+  if (!result.updates) return false;
+
+  if (taskId) {
+    for (const sub of d.subtasks) {
+      await appendSubtaskToSheet(taskId, sub.content, sub.deadline);
+      if (sub.deadline) await createGoogleSubtask(taskId, sub.content, sub.deadline, displayTitle);
+    }
+  }
+  return true;
+}
+
+async function confirmSmartImport() {
+  const todo = smartImportItems.filter(x => x.include && x.title.trim());
+  if (todo.length === 0) { alert("沒有勾選任何案件喔！"); return; }
+
+  const btn = document.getElementById("smartImportConfirmBtn");
+  btn.disabled = true;
+  let ok = 0, fail = 0;
+  for (let i = 0; i < todo.length; i++) {
+    btn.textContent = `匯入中 ${i + 1}/${todo.length}...`;
+    try { (await createCaseFromData(todo[i])) ? ok++ : fail++; }
+    catch (err) { console.error("匯入失敗:", todo[i].title, err); fail++; }
+  }
+  btn.disabled = false;
+  alert(fail === 0 ? `✅ 已匯入 ${ok} 筆案件！` : `匯入完成：成功 ${ok} 筆，失敗 ${fail} 筆（失敗原因請看 Console）`);
+  document.getElementById("smartImportText").value = "";
+  closeSmartImportModal();
+  loadTasksFromSheets();
+}
+
+// ========================================================================
 // 💡 AI 優化說明：串接 Gemini API，幫忙把「詳細說明」「執行說明」的文字潤飾得更清楚
 //    Key 只存在使用者自己瀏覽器的 localStorage，不會寫進網頁原始碼裡
 // ========================================================================
@@ -1571,11 +1866,11 @@ function saveGeminiApiKey() {
   alert("✅ 已儲存！現在可以使用「✨ AI 優化說明」了。");
 }
 
-async function callGeminiAPI(promptText, apiKey) {
+async function callGeminiAPI(promptText, apiKey, generationConfig) {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+    body: JSON.stringify(Object.assign({ contents: [{ parts: [{ text: promptText }] }] }, generationConfig ? { generationConfig } : {}))
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
@@ -1807,133 +2102,6 @@ document.getElementById("saveTaskBtn").addEventListener("click", async () => {
     btn.textContent = "儲存案件";
     btn.disabled = false;
   }
-});
-
-
-// ========================================================================
-// 📥 JSON 匯入：讀取 Gemini 產生的 JSON，逐筆照「新增案件」流程建立
-//    格式：{ "tasks": [ { category, contact, source, title, details, deadline,
-//            tags, vendor, assignee, recurFreq, subtasks:[{content, deadline}] } ] }
-// ========================================================================
-function normalizeImportDate(v) {
-  if (!v) return "";
-  const m = String(v).trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
-  if (!m) return null; // 格式錯誤
-  return `${m[1]}/${m[2].padStart(2,'0')}/${m[3].padStart(2,'0')}`;
-}
-
-function validateImportTasks(raw) {
-  const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.tasks) ? raw.tasks : null);
-  if (!list) throw new Error("找不到 tasks 陣列，請確認 JSON 格式。");
-  const errors = [];
-  const tasks = list.map((t, i) => {
-    const n = i + 1;
-    const title = String(t.title || "").trim();
-    if (!title) errors.push(`第 ${n} 筆：缺少 title`);
-    const deadline = normalizeImportDate(t.deadline);
-    if (deadline === null) errors.push(`第 ${n} 筆：deadline 格式錯誤（${t.deadline}）`);
-    let recurFreq = String(t.recurFreq || "").trim();
-    if (recurFreq && !["每月","每季","每年"].includes(recurFreq)) errors.push(`第 ${n} 筆：recurFreq 只能是 每月/每季/每年`);
-    if (recurFreq && !deadline) errors.push(`第 ${n} 筆：重複性案件必須有 deadline`);
-    const subtasks = (Array.isArray(t.subtasks) ? t.subtasks : []).map((st, j) => {
-      const d = normalizeImportDate(st.deadline);
-      if (d === null) errors.push(`第 ${n} 筆子項目 ${j + 1}：deadline 格式錯誤`);
-      return { content: String(st.content || "").trim(), deadline: d || "" };
-    }).filter(st => st.content);
-    return {
-      category: String(t.category || "").trim(),
-      contact: String(t.contact || "").trim(),
-      source: String(t.source || "").trim(),
-      title,
-      details: String(t.details || ""),
-      deadline: deadline || "",
-      tags: String(t.tags || "").trim(),
-      vendor: String(t.vendor || "").trim() || "無",
-      assignee: String(t.assignee || "").trim(),
-      recurFreq,
-      subtasks
-    };
-  });
-  return { tasks, errors };
-}
-
-async function importOneTask(t) {
-  const displayTitle = t.category ? `[${t.category}] ${t.title}` : t.title;
-  const taskId = await syncGoogleTask("", displayTitle, t.details, t.deadline, "待處理");
-  const now = new Date().toLocaleString('zh-TW');
-  const c = new Date();
-  const createdTimeStr = `${c.getFullYear()}/${(c.getMonth()+1).toString().padStart(2,'0')}/${c.getDate().toString().padStart(2,'0')} ${c.getHours().toString().padStart(2,'0')}:${c.getMinutes().toString().padStart(2,'0')}`;
-  const initialLog = `[${createdTimeStr}] 案件建立（狀態：待處理，JSON 匯入）`;
-  const rowData = ["待處理", t.category, t.contact, t.source, t.title, t.details, t.deadline, now, now, initialLog, t.tags, t.vendor, t.assignee, taskId || "", t.recurFreq];
-
-  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/案件總表!A:O:append?valueInputOption=USER_ENTERED`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ values: [rowData] })
-  });
-  const result = await res.json();
-  if (!result.updates) throw new Error(result?.error?.message || "寫入案件總表失敗");
-
-  let subtaskSkipped = false;
-  if (t.subtasks.length) {
-    if (!taskId) subtaskSkipped = true; // 子項目要掛在 Task ID 底下，沒有就無法建立
-    else for (const st of t.subtasks) {
-      await appendSubtaskToSheet(taskId, st.content, st.deadline);
-      if (st.deadline) await createGoogleSubtask(taskId, st.content, st.deadline, displayTitle);
-    }
-  }
-  return { subtaskSkipped };
-}
-
-async function handleImportJsonFile(file) {
-  if (!accessToken) return alert("請先登入！");
-  let parsed;
-  try {
-    const text = (await file.text()).replace(/^\uFEFF/, "").trim()
-      .replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, ""); // 容許 Gemini 多包的 ``` 區塊
-    parsed = JSON.parse(text);
-  } catch (e) {
-    return alert("❌ 無法解析 JSON：" + e.message);
-  }
-
-  let tasks, errors;
-  try { ({ tasks, errors } = validateImportTasks(parsed)); }
-  catch (e) { return alert("❌ " + e.message); }
-  if (errors.length) return alert("❌ 資料有誤，未匯入任何案件：\n\n" + errors.join("\n"));
-  if (!tasks.length) return alert("檔案裡沒有案件。");
-
-  const preview = tasks.map((t, i) => `${i + 1}. ${t.category ? `[${t.category}] ` : ""}${t.title}${t.deadline ? `（${t.deadline}）` : ""}${t.subtasks.length ? `，子項目 ${t.subtasks.length}` : ""}`).join("\n");
-  if (!confirm(`即將匯入 ${tasks.length} 筆案件：\n\n${preview}\n\n確定匯入？`)) return;
-
-  const btn = document.getElementById("importJsonBtn");
-  btn.disabled = true;
-  const ok = [], failed = [], noSub = [];
-  for (let i = 0; i < tasks.length; i++) {
-    btn.textContent = `匯入中 ${i + 1}/${tasks.length}...`;
-    try {
-      const r = await importOneTask(tasks[i]);
-      ok.push(tasks[i].title);
-      if (r.subtaskSkipped) noSub.push(tasks[i].title);
-    } catch (e) {
-      console.error("匯入失敗:", tasks[i], e);
-      failed.push(`${tasks[i].title}：${e.message}`);
-    }
-  }
-  btn.textContent = "📥 匯入 JSON";
-  btn.disabled = false;
-
-  let msg = `✅ 成功匯入 ${ok.length} 筆`;
-  if (failed.length) msg += `\n\n❌ 失敗 ${failed.length} 筆：\n${failed.join("\n")}`;
-  if (noSub.length) msg += `\n\n⚠️ 以下案件未同步到 Google Tasks，所以子項目沒有建立：\n${noSub.join("\n")}`;
-  alert(msg);
-  loadTasksFromSheets();
-}
-
-document.getElementById("importJsonBtn").addEventListener("click", () => document.getElementById("importJsonInput").click());
-document.getElementById("importJsonInput").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  e.target.value = ""; // 同一個檔案可重複選
-  if (file) await handleImportJsonFile(file);
 });
 
 async function loadTasksFromSheets() {
