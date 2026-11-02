@@ -3132,6 +3132,9 @@ function applyFilter() {
   const checkedCategories = Array.from(document.querySelectorAll('.filter-category-cb:checked')).map(cb => cb.value);
   const checkedVendors = Array.from(document.querySelectorAll('.filter-vendor-cb:checked')).map(cb => cb.value);
   const checkedAssignees = Array.from(document.querySelectorAll('.filter-assignee-cb:checked')).map(cb => cb.value);
+  const allCategoriesChecked = checkedCategories.length === document.querySelectorAll('.filter-category-cb').length;
+  const allVendorsChecked = checkedVendors.length === document.querySelectorAll('.filter-vendor-cb').length;
+  const allAssigneesChecked = checkedAssignees.length === document.querySelectorAll('.filter-assignee-cb').length;
   // 💡 任務摘要關鍵字模糊比對(不分大小寫)
   const titleSearchEl = document.getElementById('titleSearchInput');
   const titleKeyword = titleSearchEl ? titleSearchEl.value.trim().toLowerCase() : "";
@@ -3150,9 +3153,10 @@ function applyFilter() {
     const isUrgent = row.dataset.urgent === 'yes';
 
     const matchStatus = checkedStatuses.some(s => statusText.includes(s));
-    const matchCategory = checkedCategories.includes(categoryText);
-    const matchVendor = checkedVendors.includes(vendorText);
-    const matchAssignee = checkedAssignees.includes(assigneeText);
+    // 💡 某個篩選器「全選」時視為不限制：這樣類別/廠商/處理人是空白、或不在選單清單裡的案件，也不會被默默藏起來
+    const matchCategory = allCategoriesChecked || checkedCategories.includes(categoryText);
+    const matchVendor = allVendorsChecked || checkedVendors.includes(vendorText);
+    const matchAssignee = allAssigneesChecked || checkedAssignees.includes(assigneeText);
     const matchTag = !activeTagFilter || tagsText.split(',').map(t => t.trim()).includes(activeTagFilter);
     const matchTitle = !titleKeyword || titleText.toLowerCase().includes(titleKeyword);
 
