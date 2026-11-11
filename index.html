@@ -14,6 +14,1063 @@
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style id="arctic-theme">
+
+/* =========================================================
+   ARCTIC INTELLIGENCE
+   Premium Icelandic Financial Workspace
+   Version 2.0
+   ========================================================= */
+
+
+/* =========================================================
+   01. DESIGN TOKENS
+   ========================================================= */
+
+:root {
+  color-scheme: dark;
+
+  --arctic-bg: #07131C;
+  --arctic-sidebar: #091720;
+  --arctic-panel: #0D202B;
+  --arctic-panel-2: #142C38;
+  --arctic-panel-3: #1B3540;
+
+  --arctic-text: #D5E6E8;
+  --arctic-muted: #8FA6B0;
+  --arctic-dim: #657F8B;
+
+  --arctic-cyan: #83BFC0;
+  --arctic-cyan-soft: rgba(131,191,192,.12);
+
+  --arctic-green: #78C7B8;
+  --arctic-blue: #A6B7D6;
+  --arctic-gold: #D0AD79;
+  --arctic-red: #CB8588;
+
+  --arctic-border: rgba(143,166,176,.14);
+  --arctic-border-strong: rgba(143,166,176,.24);
+
+  --arctic-radius: 7px;
+  --arctic-radius-lg: 9px;
+
+  --arctic-shadow:
+    0 12px 32px rgba(0,0,0,.24);
+
+  --arctic-font:
+    'Inter','Noto Sans TC',system-ui,sans-serif;
+
+  --arctic-mono:
+    'IBM Plex Mono',monospace;
+}
+
+
+/* =========================================================
+   02. BASE
+   ========================================================= */
+
+html {
+  background: var(--arctic-bg);
+  color-scheme: dark;
+}
+
+body {
+  background: var(--arctic-bg) !important;
+  color: var(--arctic-text) !important;
+  font-family: var(--arctic-font) !important;
+  font-size: 14px;
+  line-height: 1.65;
+  letter-spacing: .01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,h2,h3,h4 {
+  color: var(--arctic-text);
+  letter-spacing: -.025em;
+}
+
+button,input,select,textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  transition:
+    background-color .16s ease,
+    border-color .16s ease,
+    color .16s ease,
+    opacity .16s ease;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: rgba(131,191,192,.3);
+  color: #EAF7F7;
+}
+
+
+/* =========================================================
+   03. SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--arctic-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #29414C;
+  border-radius: 8px;
+  border: 2px solid var(--arctic-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #45616C;
+}
+
+
+/* =========================================================
+   04. LAYOUT
+   ========================================================= */
+
+header {
+  background: var(--arctic-sidebar) !important;
+  color: var(--arctic-text) !important;
+  border-bottom: 1px solid var(--arctic-border);
+  box-shadow: 0 4px 18px rgba(0,0,0,.15) !important;
+}
+
+header h1 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+main {
+  padding-bottom: 40px;
+}
+
+section.bg-white,
+section.bg-slate-50 {
+  background: var(--arctic-panel) !important;
+  border-color: var(--arctic-border) !important;
+  box-shadow: none !important;
+}
+
+section.rounded-xl {
+  border-radius: var(--arctic-radius-lg) !important;
+}
+
+section.border {
+  border-color: var(--arctic-border) !important;
+}
+
+section > .border-b {
+  border-color: var(--arctic-border) !important;
+}
+
+
+/* =========================================================
+   05. HEADER BUTTONS
+   ========================================================= */
+
+header button {
+  border-radius: 5px !important;
+  font-weight: 600;
+}
+
+#loginBtn,
+#openModalBtn {
+  background: var(--arctic-cyan) !important;
+  color: #07131C !important;
+  border: 1px solid var(--arctic-cyan) !important;
+}
+
+#loginBtn:hover,
+#openModalBtn:hover {
+  background: #A1D0D0 !important;
+  border-color: #A1D0D0 !important;
+}
+
+#logoutBtn {
+  background: var(--arctic-panel-2) !important;
+  color: var(--arctic-muted) !important;
+  border: 1px solid var(--arctic-border) !important;
+}
+
+#logoutBtn:hover {
+  background: var(--arctic-panel-3) !important;
+}
+
+
+/* =========================================================
+   06. DASHBOARD CARDS
+   ========================================================= */
+
+.dashboard-card {
+  background: var(--arctic-panel) !important;
+  border: 1px solid var(--arctic-border) !important;
+  border-radius: var(--arctic-radius-lg) !important;
+  transition: all .18s ease !important;
+}
+
+.dashboard-card:hover {
+  background: var(--arctic-panel-2) !important;
+  border-color: var(--arctic-border-strong) !important;
+  transform: translateY(-2px);
+}
+
+.dashboard-card > div:first-child {
+  background: var(--arctic-panel-2) !important;
+  border: 1px solid var(--arctic-border);
+}
+
+.dashboard-card p.text-slate-500 {
+  color: var(--arctic-muted) !important;
+}
+
+.dashboard-card p.text-slate-700 {
+  color: var(--arctic-text) !important;
+  font-family: var(--arctic-mono);
+  font-size: 25px;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   07. TABLE
+   ========================================================= */
+
+table {
+  color: var(--arctic-text);
+  border-color: var(--arctic-border) !important;
+}
+
+thead {
+  background: var(--arctic-sidebar) !important;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+thead tr {
+  background: var(--arctic-sidebar) !important;
+  border-color: var(--arctic-border) !important;
+}
+
+thead th {
+  color: var(--arctic-muted) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: .07em;
+  padding-top: 15px !important;
+  padding-bottom: 15px !important;
+  border-color: var(--arctic-border) !important;
+}
+
+thead th:hover {
+  color: var(--arctic-cyan) !important;
+}
+
+tbody {
+  color: var(--arctic-text) !important;
+}
+
+tbody tr {
+  background: var(--arctic-panel) !important;
+  border-color: var(--arctic-border) !important;
+}
+
+tbody tr:hover,
+tbody tr:hover td {
+  background: var(--arctic-panel-3) !important;
+}
+
+tbody td {
+  color: var(--arctic-muted) !important;
+  border-color: var(--arctic-border) !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+tbody td[data-col="title"] {
+  color: var(--arctic-text) !important;
+  font-weight: 600;
+  min-width: 200px;
+  line-height: 1.6;
+}
+
+tbody td[data-col="category"] {
+  color: var(--arctic-muted) !important;
+}
+
+tbody td[data-col="vendor"] {
+  color: var(--arctic-blue) !important;
+  font-weight: 600;
+}
+
+tbody td[data-col="assignee"] {
+  color: var(--arctic-cyan) !important;
+}
+
+tbody td[data-col="deadline"] {
+  color: var(--arctic-gold) !important;
+  font-family: var(--arctic-mono);
+  font-size: 12px !important;
+}
+
+tbody td[data-col="lastupdate"] {
+  color: var(--arctic-dim) !important;
+  font-family: var(--arctic-mono);
+  font-size: 11px !important;
+}
+
+tbody td[data-col="contact"],
+tbody td[data-col="source"] {
+  color: var(--arctic-muted) !important;
+}
+
+.table-row-item {
+  border-bottom: 1px solid var(--arctic-border) !important;
+}
+
+/* 本週到期 */
+.table-row-item.bg-sky-50 {
+  background:
+    rgba(131,191,192,.055) !important;
+  box-shadow: inset 2px 0 var(--arctic-cyan);
+}
+
+.table-row-item.bg-sky-50:hover {
+  background: var(--arctic-panel-3) !important;
+}
+
+/* 已結案等狀態降低視覺權重 */
+tbody td[data-col="status"] span {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px !important;
+  padding: 3px 9px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border: 1px solid transparent;
+}
+
+/* 狀態色 */
+.bg-amber-100,
+.bg-amber-50 {
+  background: rgba(208,173,121,.13) !important;
+}
+
+.text-amber-700,
+.text-amber-600,
+.text-amber-500 {
+  color: var(--arctic-gold) !important;
+}
+
+.bg-blue-100,
+.bg-blue-50 {
+  background: rgba(131,191,192,.13) !important;
+}
+
+.text-blue-700,
+.text-blue-600,
+.text-blue-500 {
+  color: var(--arctic-cyan) !important;
+}
+
+.bg-emerald-100,
+.bg-emerald-50 {
+  background: rgba(120,199,184,.12) !important;
+}
+
+.text-emerald-700,
+.text-emerald-600,
+.text-emerald-500 {
+  color: var(--arctic-green) !important;
+}
+
+.bg-purple-100,
+.bg-purple-50,
+.bg-indigo-100,
+.bg-indigo-50 {
+  background: rgba(166,183,214,.12) !important;
+}
+
+.text-purple-700,
+.text-purple-600,
+.text-purple-500,
+.text-indigo-700,
+.text-indigo-600 {
+  color: var(--arctic-blue) !important;
+}
+
+.bg-rose-100,
+.bg-rose-50 {
+  background: rgba(203,133,136,.12) !important;
+}
+
+.text-rose-700,
+.text-rose-600,
+.text-rose-500,
+.text-rose-400 {
+  color: var(--arctic-red) !important;
+}
+
+/* 標籤 */
+tbody td[data-col="tags"] span {
+  background: rgba(166,183,214,.10) !important;
+  color: var(--arctic-blue) !important;
+  border: 1px solid rgba(166,183,214,.16);
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  padding: 2px 7px !important;
+  margin-right: 3px;
+  display: inline-block;
+}
+
+tbody td[data-col="tags"] span:hover {
+  background: rgba(166,183,214,.2) !important;
+  color: #D5E6E8 !important;
+}
+
+/* 排序 */
+.sort-arrow {
+  color: var(--arctic-cyan);
+  font-family: var(--arctic-mono);
+  font-size: 10px;
+}
+
+
+/* =========================================================
+   08. FILTERS & TOOLBAR
+   ========================================================= */
+
+input:not([type="checkbox"]),
+select,
+textarea {
+  background-color: var(--arctic-panel-2) !important;
+  color: var(--arctic-text) !important;
+  border-color: var(--arctic-border-strong) !important;
+  border-radius: 5px !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--arctic-dim) !important;
+  opacity: 1;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--arctic-cyan) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(131,191,192,.13) !important;
+}
+
+select option {
+  background: var(--arctic-panel-2);
+  color: var(--arctic-text);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--arctic-cyan);
+}
+
+input[type="date"] {
+  color-scheme: dark;
+}
+
+button.border,
+button.bg-white {
+  border-color: var(--arctic-border-strong) !important;
+}
+
+#titleSearchInput {
+  min-height: 36px;
+}
+
+#statusDropdown button,
+#categoryDropdown button,
+#vendorDropdown button,
+#assigneeDropdown button {
+  background: var(--arctic-panel-2) !important;
+  color: var(--arctic-text) !important;
+  border-color: var(--arctic-border-strong) !important;
+}
+
+#statusDropdown button:hover,
+#categoryDropdown button:hover,
+#vendorDropdown button:hover,
+#assigneeDropdown button:hover {
+  background: var(--arctic-panel-3) !important;
+}
+
+
+/* =========================================================
+   09. ACTION BUTTONS
+   ========================================================= */
+
+.bg-blue-600,
+.bg-blue-500 {
+  background: var(--arctic-cyan) !important;
+}
+
+button.bg-blue-600,
+button.bg-blue-500,
+button.bg-emerald-500 {
+  color: #07131C !important;
+  border: 1px solid var(--arctic-cyan) !important;
+  font-weight: 700;
+}
+
+button.bg-blue-600:hover,
+button.bg-blue-500:hover {
+  background: #A1D0D0 !important;
+}
+
+button.bg-emerald-500 {
+  background: var(--arctic-green) !important;
+  border-color: var(--arctic-green) !important;
+}
+
+button.bg-indigo-50,
+button.bg-purple-50,
+button.bg-sky-50,
+button.bg-emerald-50 {
+  background: var(--arctic-panel-2) !important;
+  border: 1px solid var(--arctic-border) !important;
+}
+
+button.bg-indigo-50:hover,
+button.bg-purple-50:hover,
+button.bg-sky-50:hover,
+button.bg-emerald-50:hover {
+  background: var(--arctic-panel-3) !important;
+}
+
+button.bg-indigo-50,
+button.bg-purple-50 {
+  color: var(--arctic-blue) !important;
+}
+
+button.bg-sky-50 {
+  color: var(--arctic-cyan) !important;
+}
+
+button.bg-emerald-50 {
+  color: var(--arctic-green) !important;
+}
+
+
+/* =========================================================
+   10. DROPDOWN & COMBO PANEL
+   ========================================================= */
+
+#statusMenu,
+#categoryMenu,
+#vendorMenu,
+#assigneeMenu,
+#columnMenu,
+.combo-panel {
+  background: var(--arctic-panel) !important;
+  color: var(--arctic-text) !important;
+  border: 1px solid var(--arctic-border-strong) !important;
+  border-radius: 7px !important;
+  box-shadow: var(--arctic-shadow) !important;
+  z-index: 80;
+}
+
+.combo-panel {
+  overflow: hidden;
+}
+
+.combo-panel .combo-item {
+  color: var(--arctic-text) !important;
+  border-radius: 4px !important;
+}
+
+.combo-panel .combo-item:hover,
+.combo-panel .combo-item.bg-blue-50 {
+  background: var(--arctic-panel-3) !important;
+}
+
+.combo-panel .combo-item .font-bold {
+  color: var(--arctic-text) !important;
+}
+
+.combo-panel .combo-search {
+  background: var(--arctic-panel-2) !important;
+}
+
+#statusMenu label,
+#categoryMenu label,
+#vendorMenu label,
+#assigneeMenu label,
+#columnMenu label {
+  color: var(--arctic-text) !important;
+}
+
+#statusMenu label:hover,
+#categoryMenu label:hover,
+#vendorMenu label:hover,
+#assigneeMenu label:hover,
+#columnMenu label:hover {
+  background: var(--arctic-panel-3) !important;
+}
+
+#statusMenu .border-b,
+#categoryMenu .border-b,
+#vendorMenu .border-b,
+#assigneeMenu .border-b {
+  border-color: var(--arctic-border) !important;
+}
+
+
+/* =========================================================
+   11. MODALS
+   ========================================================= */
+
+[id$="Modal"] {
+  backdrop-filter: blur(5px);
+}
+
+#taskModal,
+#taskDetailModal,
+#templatePickerModal,
+#handoverModal,
+#smartImportModal,
+#geminiKeyModal,
+#wpExportModal {
+  background: rgba(3,12,19,.82) !important;
+}
+
+#taskModal > div,
+#taskDetailModal > div,
+#templatePickerModal > div,
+#handoverModal > div,
+#smartImportModal > div,
+#geminiKeyModal > div,
+#wpExportModal > div {
+  background: var(--arctic-panel) !important;
+  color: var(--arctic-text) !important;
+  border: 1px solid var(--arctic-border-strong);
+  border-radius: 9px !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.5) !important;
+}
+
+#taskModal > div > div:first-child,
+#taskDetailModal > div > div:first-child,
+#templatePickerModal > div > div:first-child,
+#handoverModal > div > div:first-child,
+#smartImportModal > div > div:first-child,
+#geminiKeyModal > div > div:first-child {
+  background: var(--arctic-sidebar) !important;
+  border-color: var(--arctic-border) !important;
+}
+
+#taskModal h2,
+#taskDetailModal h3,
+#templatePickerModal h3,
+#handoverModal h3,
+#smartImportModal h3,
+#geminiKeyModal h3 {
+  color: var(--arctic-text) !important;
+}
+
+#taskModal label,
+#taskDetailModal label,
+#templatePickerModal label,
+#handoverModal label,
+#smartImportModal label,
+#geminiKeyModal label {
+  color: var(--arctic-muted);
+}
+
+#taskModal .bg-slate-50,
+#taskDetailModal .bg-slate-50,
+#taskDetailModal .bg-blue-50\/50,
+#taskDetailModal .bg-amber-50,
+#templatePickerModal .bg-slate-50,
+#handoverModal .bg-slate-50,
+#smartImportModal .bg-slate-50,
+#geminiKeyModal .bg-slate-50 {
+  background: var(--arctic-panel-2) !important;
+}
+
+#taskModal .border-t,
+#taskDetailModal .border-t,
+#taskDetailModal .border-b {
+  border-color: var(--arctic-border) !important;
+}
+
+#taskModal button,
+#taskDetailModal button,
+#templatePickerModal button,
+#handoverModal button,
+#smartImportModal button,
+#geminiKeyModal button {
+  border-radius: 5px;
+}
+
+
+/* =========================================================
+   12. HISTORY LOG TIMELINE
+   ========================================================= */
+
+#detailLogList {
+  background: #0A1922 !important;
+  border: 1px solid var(--arctic-border) !important;
+  border-radius: 7px !important;
+}
+
+#detailLogList > div {
+  position: relative;
+}
+
+#detailLogList .bg-slate-200 {
+  background: rgba(131,191,192,.28) !important;
+}
+
+#detailLogList .ring-white {
+  --tw-ring-color: var(--arctic-panel) !important;
+}
+
+#detailLogList .text-slate-400 {
+  color: var(--arctic-dim) !important;
+}
+
+#detailLogList .text-slate-700 {
+  color: var(--arctic-text) !important;
+}
+
+#detailLogList .text-slate-500 {
+  color: var(--arctic-muted) !important;
+}
+
+#detailLogList .rounded-full {
+  border-radius: 4px !important;
+}
+
+#detailLogList .text-xs.font-bold {
+  font-family: var(--arctic-mono);
+  font-size: 11px !important;
+}
+
+
+/* =========================================================
+   13. GANTT CHART
+   ========================================================= */
+
+#ganttWrapper {
+  background: #0A1922;
+  border-radius: 6px;
+  scrollbar-color: #29414C #0A1922;
+}
+
+#ganttChart {
+  color: var(--arctic-muted);
+  position: relative;
+}
+
+#ganttChart > .absolute[style*="border-top"] {
+  border-color: var(--arctic-border-strong) !important;
+}
+
+#ganttChart .bg-slate-300 {
+  background: #49616C !important;
+}
+
+#ganttChart .text-slate-400 {
+  color: var(--arctic-muted) !important;
+}
+
+/* 甘特圖點位 */
+#ganttChart .bg-blue-500 {
+  background: var(--arctic-cyan) !important;
+}
+
+#ganttChart .bg-emerald-500 {
+  background: var(--arctic-green) !important;
+}
+
+#ganttChart .bg-amber-500 {
+  background: var(--arctic-gold) !important;
+}
+
+#ganttChart .bg-rose-500 {
+  background: var(--arctic-red) !important;
+}
+
+#ganttChart .border-white {
+  border-color: var(--arctic-panel) !important;
+}
+
+#ganttChart .ring-rose-100 {
+  --tw-ring-color: rgba(203,133,136,.2) !important;
+}
+
+#ganttChart .ring-amber-100 {
+  --tw-ring-color: rgba(208,173,121,.2) !important;
+}
+
+#ganttChart .bg-slate-800 {
+  background: #203A46 !important;
+  color: var(--arctic-text) !important;
+}
+
+#ganttChart .text-white {
+  color: var(--arctic-text) !important;
+}
+
+#ganttChart .text-slate-300 {
+  color: var(--arctic-muted) !important;
+}
+
+/* Today 垂直線 */
+#ganttChart .border-amber-300 {
+  border-color: var(--arctic-cyan) !important;
+  border-left-width: 1px !important;
+  border-style: dashed !important;
+}
+
+/* Today 日期 */
+#ganttChart .text-amber-600 {
+  color: var(--arctic-cyan) !important;
+}
+
+
+/* =========================================================
+   14. SUBTASK WIDGET
+   ========================================================= */
+
+#dueSubtasksSection {
+  background: var(--arctic-panel) !important;
+}
+
+#dueSubtasksSection button {
+  color: var(--arctic-muted);
+}
+
+#dueSubtasksSection button:hover {
+  color: var(--arctic-cyan);
+}
+
+#dueSubtasksList > div {
+  border-radius: 5px;
+}
+
+#dueSubtasksList > div:hover {
+  background: var(--arctic-panel-3) !important;
+}
+
+#dueSubtasksList .text-slate-700 {
+  color: var(--arctic-text) !important;
+}
+
+
+/* =========================================================
+   15. PAGINATION
+   ========================================================= */
+
+#paginationBar {
+  background: var(--arctic-sidebar);
+  border-color: var(--arctic-border) !important;
+}
+
+#paginationBar button {
+  border: 1px solid transparent;
+  border-radius: 5px !important;
+  color: var(--arctic-muted) !important;
+}
+
+#paginationBar button:hover:not(:disabled) {
+  background: var(--arctic-panel-3) !important;
+  color: var(--arctic-cyan) !important;
+}
+
+#paginationBar button.bg-blue-600 {
+  background: var(--arctic-cyan) !important;
+  color: #07131C !important;
+}
+
+#paginationBar select {
+  background: var(--arctic-panel-2) !important;
+}
+
+
+/* =========================================================
+   16. TAG FILTER BANNER
+   ========================================================= */
+
+#tagFilterBanner {
+  background: rgba(166,183,214,.08) !important;
+  border-color: rgba(166,183,214,.2) !important;
+  color: var(--arctic-blue) !important;
+}
+
+
+/* =========================================================
+   17. UTILITY OVERRIDES
+   ========================================================= */
+
+/* Background */
+.bg-white {
+  background-color: var(--arctic-panel) !important;
+}
+
+.bg-slate-50 {
+  background-color: var(--arctic-sidebar) !important;
+}
+
+.bg-slate-100 {
+  background-color: var(--arctic-panel-2) !important;
+}
+
+.bg-slate-200 {
+  background-color: #29414C !important;
+}
+
+.bg-slate-300 {
+  background-color: #49616C !important;
+}
+
+.bg-slate-700 {
+  background-color: #29414C !important;
+}
+
+.bg-slate-800 {
+  background-color: #203A46 !important;
+}
+
+.bg-slate-900 {
+  background-color: #07131C !important;
+}
+
+.bg-\[\#1e293b\] {
+  background-color: var(--arctic-sidebar) !important;
+}
+
+/* Text */
+.text-slate-800,
+.text-slate-700 {
+  color: var(--arctic-text) !important;
+}
+
+.text-slate-600,
+.text-slate-500 {
+  color: var(--arctic-muted) !important;
+}
+
+.text-slate-400,
+.text-slate-300 {
+  color: var(--arctic-dim) !important;
+}
+
+.text-slate-200 {
+  color: var(--arctic-text) !important;
+}
+
+/* Border */
+.border-slate-100,
+.border-slate-200 {
+  border-color: var(--arctic-border) !important;
+}
+
+.border-slate-300 {
+  border-color: var(--arctic-border-strong) !important;
+}
+
+.border-blue-100,
+.border-indigo-100,
+.border-indigo-200,
+.border-purple-200,
+.border-amber-200,
+.border-amber-300 {
+  border-color: var(--arctic-border-strong) !important;
+}
+
+.divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--arctic-border) !important;
+}
+
+/* Hover */
+.hover\:bg-slate-50:hover,
+.hover\:bg-slate-100:hover,
+.hover\:bg-slate-200:hover {
+  background-color: var(--arctic-panel-3) !important;
+}
+
+.hover\:text-slate-600:hover,
+.hover\:text-slate-700:hover,
+.hover\:text-slate-800:hover {
+  color: var(--arctic-cyan) !important;
+}
+
+.hover\:text-blue-800:hover,
+.hover\:text-blue-700:hover {
+  color: #A1D0D0 !important;
+}
+
+/* Focus */
+.focus\:ring-blue-500:focus {
+  --tw-ring-color: rgba(131,191,192,.35) !important;
+}
+
+/* Preserve functional visibility */
+.hidden {
+  display: none !important;
+}
+
+/* Modal overlay must remain clickable */
+.fixed {
+  pointer-events: auto;
+}
+
+/* Small metadata */
+.font-mono,
+time,
+td[data-col="deadline"],
+td[data-col="lastupdate"] {
+  font-family: var(--arctic-mono);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  main {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .dashboard-card {
+    padding: 14px !important;
+  }
+
+  table {
+    min-width: 950px;
+  }
+
+  #taskModal > div,
+  #taskDetailModal > div,
+  #templatePickerModal > div,
+  #handoverModal > div,
+  #smartImportModal > div,
+  #geminiKeyModal > div {
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+}
+
+</style>
 </head>
 <body class="text-slate-800 min-h-screen">
 
@@ -212,6 +1269,7 @@
           </div>
         </div>
         <button type="button" onclick="openSmartImportModal()" class="px-3 py-1.5 text-sm font-bold text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 transition">✨ 智慧匯入</button>
+        <button type="button" onclick="openWorkPoolExport()" class="px-3 py-1.5 text-sm font-bold text-sky-600 bg-sky-50 rounded-md hover:bg-sky-100 transition">🌊 匯出工作水池</button>
         <button type="button" onclick="openHandoverModal()" class="px-3 py-1.5 text-sm font-bold text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 transition">📤 工作交接</button>
         <button class="px-3 py-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-md hover:bg-emerald-100 transition">📥 匯出 Excel</button>
       </div>
@@ -431,6 +1489,10 @@
         </div>
       </div>
       <div>
+        <label class="flex items-center gap-2 mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer">
+          <input type="checkbox" id="detailImportant" class="w-4 h-4 accent-amber-500">
+          <span class="text-sm font-bold text-amber-700">⭐ 重要（匯出到週報系統／工作水池）</span>
+        </label>
         <label class="block text-sm font-bold text-slate-700 mb-2">🏷️ 案件標籤 (多個標籤請用半形逗號 , 分隔)</label>
         <input type="text" id="detailTags" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 placeholder-slate-400" placeholder="例如：VIP, 需要報價, 跨部門">
       </div>
@@ -1727,12 +2789,97 @@ async function runSmartImportParse() {
   }
 
   smartImportItems = normalizeSmartImportItems(parsed);
+  await attachSmartImportMatches();
   if (smartImportItems.length === 0) { alert("沒有整理出任何案件，請確認內容或換個寫法再試一次。"); return; }
   renderSmartImportPreview();
   document.getElementById("smartImportStep1").classList.add("hidden");
   document.getElementById("smartImportStep2").classList.remove("hidden");
   document.getElementById("smartImportStep2").classList.add("flex");
   document.getElementById("smartImportStepHint").textContent = "步驟 2／2：確認內容，沒問題就匯入";
+}
+
+// ---- 重複案件偵測：判斷匯入的項目是不是已經有了，有的話改成「補上子項目」 ----
+let smartImportSubsByCase = {}; // taskId -> 既有子項目內容陣列
+
+function normTitle(s) {
+  return String(s || "").toLowerCase().replace(/[\s\u3000，。、；：！？,.;:!?()（）\[\]【】「」"'\-_\/\\]/g, "");
+}
+
+function titleSimilarity(a, b) {
+  a = normTitle(a); b = normTitle(b);
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  if ((a.length >= 4 && b.includes(a)) || (b.length >= 4 && a.includes(b))) return 0.9;
+  const bi = (x) => { const r = []; for (let i = 0; i < x.length - 1; i++) r.push(x.slice(i, i + 2)); return r; };
+  const A = bi(a), B = bi(b);
+  if (!A.length || !B.length) return 0;
+  const pool = new Map();
+  B.forEach(x => pool.set(x, (pool.get(x) || 0) + 1));
+  let inter = 0;
+  A.forEach(x => { const c = pool.get(x) || 0; if (c > 0) { inter++; pool.set(x, c - 1); } });
+  return (2 * inter) / (A.length + B.length);
+}
+
+async function attachSmartImportMatches() {
+  smartImportSubsByCase = {};
+  try {
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SUBTASK_SHEET)}!A2:E`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    (data.values || []).forEach(r => {
+      if (!r[0] || !r[1]) return;
+      (smartImportSubsByCase[r[0]] = smartImportSubsByCase[r[0]] || []).push(r[1]);
+    });
+  } catch (err) { console.error("讀取既有子項目失敗:", err); }
+
+  // 只跟「還沒結案」且有案件 ID(子項目是靠它掛上去的)的案件比對
+  const pool = (allTasksData || []).filter(t => !t.isVoid && !t.status.includes("結案") && t.taskId);
+  smartImportItems.forEach(it => {
+    let best = null;
+    pool.forEach(t => {
+      const score = titleSimilarity(it.title, t.title);
+      if (score >= 0.6 && (!best || score > best.score)) best = { task: t, score };
+    });
+    it.match = best;
+    it.mode = best ? "merge" : "new";
+  });
+}
+
+function updateSmartMode(i, mode) {
+  smartImportItems[i].mode = mode;
+  renderSmartImportPreview();
+}
+
+function isDupSub(it, sub) {
+  if (!it.match) return false;
+  const existing = (smartImportSubsByCase[it.match.task.taskId] || []).map(normTitle);
+  return existing.includes(normTitle(sub.content));
+}
+
+// 更新既有案件：只補上「還沒有」的子項目，並在處理歷程留一筆紀錄
+async function mergeSubtasksIntoCase(it) {
+  const task = it.match.task;
+  const fresh = it.subtasks.filter(sub => sub.content.trim() && !isDupSub(it, sub));
+  if (fresh.length === 0) return 0;
+
+  const displayTitle = task.category ? `[${task.category}] ${task.title}` : task.title;
+  for (const sub of fresh) {
+    await appendSubtaskToSheet(task.taskId, sub.content, sub.deadline);
+    if (sub.deadline) await createGoogleSubtask(task.taskId, sub.content, sub.deadline, displayTitle);
+  }
+
+  const c = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const timeStr = `${c.getFullYear()}/${pad(c.getMonth() + 1)}/${pad(c.getDate())} ${pad(c.getHours())}:${pad(c.getMinutes())}`;
+  const entry = `[${timeStr}] 智慧匯入：新增 ${fresh.length} 個子項目（${fresh.map(x => x.content).join("、")}）`;
+  const newLog = task.historyLog ? `${task.historyLog}\n\n${entry}` : entry;
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ valueInputOption: "USER_ENTERED", data: [{ range: `案件總表!I${task.rowIndex}:J${task.rowIndex}`, values: [[timeStr, newLog]] }] })
+  });
+  return fresh.length;
 }
 
 function updateSmartItem(i, field, value) {
@@ -1747,9 +2894,14 @@ function removeSmartSub(i, j) {
   renderSmartImportPreview();
 }
 function updateSmartImportCount() {
-  const n = smartImportItems.filter(x => x.include).length;
-  document.getElementById("smartImportSummary").textContent = `共整理出 ${smartImportItems.length} 筆案件，已勾選 ${n} 筆`;
-  document.getElementById("smartImportConfirmBtn").textContent = `匯入 ${n} 筆案件`;
+  const picked = smartImportItems.filter(x => x.include);
+  const nMerge = picked.filter(x => x.mode === "merge" && x.match).length;
+  const nNew = picked.length - nMerge;
+  const dupHint = smartImportItems.filter(x => x.match).length;
+  document.getElementById("smartImportSummary").textContent =
+    `共整理出 ${smartImportItems.length} 筆${dupHint ? `（其中 ${dupHint} 筆疑似已存在）` : ""}，已勾選 ${picked.length} 筆`;
+  document.getElementById("smartImportConfirmBtn").textContent =
+    nMerge ? `新增 ${nNew} 筆、更新 ${nMerge} 筆既有案件` : `匯入 ${nNew} 筆案件`;
 }
 
 function renderSmartImportPreview() {
@@ -1763,26 +2915,34 @@ function renderSmartImportPreview() {
   };
 
   document.getElementById("smartImportPreviewList").innerHTML = smartImportItems.map((it, i) => `
-    <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+    <div class="bg-white border ${it.match && it.mode === "merge" ? "border-indigo-300" : "border-slate-200"} rounded-lg p-3 space-y-2">
+      ${it.match ? `<div class="flex items-center justify-between gap-2 flex-wrap bg-indigo-50 border border-indigo-100 rounded px-2 py-1.5 text-xs">
+        <span class="text-indigo-700">🔁 已有相似案件：<b>${escapeHtml(it.match.task.title)}</b>（${escapeHtml(it.match.task.status)}${it.match.task.deadline ? "，期限 " + escapeHtml(it.match.task.deadline) : ""}，相似度 ${Math.round(it.match.score * 100)}%）</span>
+        <select onchange="updateSmartMode(${i}, this.value)" class="border border-indigo-200 rounded px-2 py-1 bg-white outline-none">
+          <option value="merge" ${it.mode === "merge" ? "selected" : ""}>更新既有案件（只補上新的子項目）</option>
+          <option value="new" ${it.mode === "new" ? "selected" : ""}>另外建立成新案件</option>
+        </select>
+      </div>` : ""}
       <div class="flex items-center gap-2">
         <input type="checkbox" ${it.include ? "checked" : ""} onchange="updateSmartItem(${i}, 'include', this.checked)" class="w-4 h-4 rounded text-blue-600 shrink-0">
         <input type="text" value="${escapeHtml(it.title)}" oninput="updateSmartItem(${i}, 'title', this.value)" class="flex-1 border border-slate-300 rounded px-2 py-1 text-sm font-bold outline-none focus:ring-1 focus:ring-blue-500">
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pl-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pl-6 ${it.match && it.mode === "merge" ? "opacity-40 pointer-events-none" : ""}">
         <div><div class="text-[10px] text-slate-400 mb-0.5">專案類別</div>${selectHtml(i, "category", o.categories, it.category, "(未指定)")}</div>
         <div><div class="text-[10px] text-slate-400 mb-0.5">負責廠商</div>${selectHtml(i, "vendor", o.vendors, it.vendor, "(未指定)")}</div>
         <div><div class="text-[10px] text-slate-400 mb-0.5">處理人</div>${selectHtml(i, "assignee", o.assignees, it.assignee, "(未指定)")}</div>
         <div><div class="text-[10px] text-slate-400 mb-0.5">最後期限</div>
           <input type="date" value="${it.deadline ? it.deadline.replace(/\//g, "-") : ""}" onchange="updateSmartItem(${i}, 'deadline', this.value.replace(/-/g, '/'))" class="w-full border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500"></div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pl-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pl-6 ${it.match && it.mode === "merge" ? "opacity-40 pointer-events-none" : ""}">
         <textarea rows="2" oninput="updateSmartItem(${i}, 'details', this.value)" placeholder="詳細說明" class="md:col-span-2 border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500 resize-none">${escapeHtml(it.details)}</textarea>
         <input type="text" value="${escapeHtml(it.tags)}" oninput="updateSmartItem(${i}, 'tags', this.value)" placeholder="標籤，用逗號分隔" class="border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500 self-start">
       </div>
       ${it.subtasks.length ? `<div class="pl-6 space-y-1">
         <div class="text-[10px] text-slate-400">✅ 子項目 (${it.subtasks.length})</div>
-        ${it.subtasks.map((sub, j) => `<div class="flex items-center gap-2">
+        ${it.subtasks.map((sub, j) => `<div class="flex items-center gap-2 ${isDupSub(it, sub) ? "opacity-50" : ""}">
           <span class="text-slate-300 text-xs">└</span>
+          ${it.match && it.mode === "merge" ? (isDupSub(it, sub) ? '<span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">已存在·略過</span>' : '<span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">新增</span>') : ""}
           <input type="text" value="${escapeHtml(sub.content)}" oninput="updateSmartSub(${i}, ${j}, 'content', this.value)" class="flex-1 border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500">
           <input type="date" value="${sub.deadline ? sub.deadline.replace(/\//g, "-") : ""}" onchange="updateSmartSub(${i}, ${j}, 'deadline', this.value)" class="w-32 border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500">
           <button type="button" onclick="removeSmartSub(${i}, ${j})" class="text-slate-300 hover:text-rose-500 text-xs" title="移除這個子項目">✕</button>
@@ -1826,14 +2986,24 @@ async function confirmSmartImport() {
 
   const btn = document.getElementById("smartImportConfirmBtn");
   btn.disabled = true;
-  let ok = 0, fail = 0;
+  let ok = 0, merged = 0, mergedSubs = 0, fail = 0;
   for (let i = 0; i < todo.length; i++) {
     btn.textContent = `匯入中 ${i + 1}/${todo.length}...`;
-    try { (await createCaseFromData(todo[i])) ? ok++ : fail++; }
+    try {
+      if (todo[i].match && todo[i].mode === "merge") {
+        mergedSubs += await mergeSubtasksIntoCase(todo[i]);
+        merged++;
+      } else {
+        (await createCaseFromData(todo[i])) ? ok++ : fail++;
+      }
+    }
     catch (err) { console.error("匯入失敗:", todo[i].title, err); fail++; }
   }
   btn.disabled = false;
-  alert(fail === 0 ? `✅ 已匯入 ${ok} 筆案件！` : `匯入完成：成功 ${ok} 筆，失敗 ${fail} 筆（失敗原因請看 Console）`);
+  const parts = [];
+  if (ok) parts.push(`新建 ${ok} 筆案件`);
+  if (merged) parts.push(`更新 ${merged} 筆既有案件（新增 ${mergedSubs} 個子項目）`);
+  alert((fail === 0 ? "✅ " : "⚠️ ") + (parts.join("、") || "沒有需要新增的內容") + (fail ? `；失敗 ${fail} 筆（原因請看 Console）` : ""));
   document.getElementById("smartImportText").value = "";
   closeSmartImportModal();
   loadTasksFromSheets();
@@ -2267,6 +3437,7 @@ function renderTable() {
           <button onclick="deleteTask(${task.rowIndex}, '${encLog}', '${encTaskId}')" class="hover:scale-125 transition text-lg" title="刪除並完成任務">🗑️</button>
         </td>
         <td class="px-3 py-3 text-center whitespace-nowrap" data-col="edit">
+          <button onclick="toggleImportant(${task.rowIndex})" class="hover:scale-125 transition text-lg mr-1 ${hasImportantTag(task.tags) ? '' : 'grayscale opacity-40'}" title="${hasImportantTag(task.tags) ? '已標為重要（點擊取消）' : '標為重要，會匯出到週報'}">⭐</button>
           <button onclick="openTaskDetail(${task.rowIndex}, '${task.status}', '${encLog}', '${encTags}', '${encCat}', '${encVendor}', '${encContact}', '${encSource}', '${encDeadline}', '${encAssignee}', '${encTitle}', '${encTaskId}', '${encRecur}')" class="hover:scale-125 transition text-lg" title="編輯">✏️</button>
         </td>
         <td class="px-6 py-3 font-medium text-slate-700 whitespace-nowrap" data-col="category">${task.category}</td>
@@ -2598,6 +3769,135 @@ function openTaskDetailByTaskId(encTaskId) {
   );
 }
 
+// ===== ⭐ 重要標註（以標籤「⭐重要」儲存在案件總表 K 欄，不改試算表結構）=====
+const IMPORTANT_TAG = '⭐重要';
+function splitTags(str) { return (str || '').split(/[,，]/).map(t => t.trim()).filter(Boolean); }
+function hasImportantTag(str) { return splitTags(str).includes(IMPORTANT_TAG); }
+function setImportantInTags(str, on) {
+  const list = splitTags(str).filter(t => t !== IMPORTANT_TAG);
+  if (on) list.unshift(IMPORTANT_TAG);
+  return list.join(', ');
+}
+(function bindImportantSync() {
+  const chk = document.getElementById('detailImportant'), inp = document.getElementById('detailTags');
+  if (!chk || !inp) return;
+  chk.addEventListener('change', () => { inp.value = setImportantInTags(inp.value, chk.checked); });
+  inp.addEventListener('input', () => { chk.checked = hasImportantTag(inp.value); });
+})();
+async function toggleImportant(rowIndex) {
+  const t = (allTasksData || []).find(x => x.rowIndex === rowIndex);
+  if (!t) return;
+  if (!accessToken) { alert('請先登入 Google 帳號'); return; }
+  const newTags = setImportantInTags(t.tags, !hasImportantTag(t.tags));
+  try {
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent('案件總表!K' + rowIndex)}?valueInputOption=USER_ENTERED`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[newTags]] })
+    });
+    if (!res.ok) throw new Error(res.status);
+    t.tags = newTags;
+    renderTable();
+  } catch (e) { alert('標註失敗，請確認登入狀態後再試（' + e.message + '）'); }
+}
+
+// ===== 匯出到「工作水池」(週報系統 v3) =====
+// 格式: {"cards":[...]}；去重靠 來源=雜事系統 + 來源ID=案件ID，重複匯入會被對方跳過
+function wpMapStatus(s) {
+  if (s.includes('結案')) return '已完成';
+  if (s.includes('處理中')) return '進行中';
+  if (s.includes('等回覆')) return '等回覆';
+  return '待處理';
+}
+function wpToDash(d) { return (d || '').replace(/\//g, '-'); }
+function wpBuildCard(t) {
+  const lastLog = (t.historyLog || '').split('\n').filter(Boolean).pop() || '';
+  const desc = [
+    t.category && `專案類別：${t.category}`,
+    t.contact && `聯絡人：${t.contact}`,
+    t.source && `任務來源：${t.source}`,
+    splitTags(t.tags).filter(x => x !== IMPORTANT_TAG).length && `標籤：${splitTags(t.tags).filter(x => x !== IMPORTANT_TAG).join('、')}`,
+    lastLog && `最近進度：${lastLog}`
+  ].filter(Boolean).join('\n');
+  return {
+    卡片類型: t.recurFreq ? '定期事項' : '專案',
+    區塊分類: '',
+    標題: t.title,
+    關聯單號: '',
+    廠商: t.vendor && t.vendor !== '無' ? t.vendor : '',
+    負責人: t.assignee || '',
+    狀態: wpMapStatus(t.status),
+    開始日: '',
+    截止日: wpToDash(t.deadline),
+    來源: '雜事系統',
+    來源ID: t.taskId || ('ZS-T:' + t.title),
+    描述: desc
+  };
+}
+// 預選規則：逾期/本週到期、等回覆、涉及廠商、週期性 → 預設勾選
+function wpSuggest(t) {
+  const why = [];
+  if (t.isUrgent) why.push('逾期');
+  else if (t.isThisWeek) why.push('本週到期');
+  if (t.status.includes('等回覆')) why.push('等回覆');
+  if (t.vendor && t.vendor !== '無') why.push('涉及廠商');
+  if (t.recurFreq) why.push('週期性');
+  return why;
+}
+function openWorkPoolExport() {
+  const open = (allTasksData || []).filter(t => !t.isVoid && !t.status.includes('結案'));
+  let m = document.getElementById('wpExportModal');
+  if (m) m.remove();
+  m = document.createElement('div');
+  m.id = 'wpExportModal';
+  m.className = 'fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4';
+  const rows = open.map((t, i) => {
+    const why = wpSuggest(t);
+    const imp = hasImportantTag(t.tags);
+    return `<tr class="border-t border-slate-100 ${imp ? '' : 'wp-extra hidden'}">
+      <td class="px-2 py-1.5"><input type="checkbox" class="wp-chk w-4 h-4" data-i="${i}" ${hasImportantTag(t.tags) ? 'checked' : ''}></td>
+      <td class="px-2 py-1.5 text-xs">${escapeHtml(t.status)}</td>
+      <td class="px-2 py-1.5 text-sm">${escapeHtml(t.title)}</td>
+      <td class="px-2 py-1.5 text-xs text-slate-500">${escapeHtml(t.deadline || '—')}</td>
+      <td class="px-2 py-1.5 text-xs ${imp ? 'text-amber-600' : 'text-slate-400'}">${imp ? '⭐ 已標重要' : (why.length ? '建議標註：' + escapeHtml(why.join('、')) : '')}</td></tr>`;
+  }).join('');
+  m.innerHTML = `<div class="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+    <div class="px-5 py-3 border-b flex items-center justify-between">
+      <div class="font-bold text-slate-800">🌊 匯出到工作水池</div>
+      <button type="button" onclick="document.getElementById('wpExportModal').remove()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
+    </div>
+    <div class="px-5 py-2 text-xs text-slate-500">只會匯出你標了 ⭐ 的案件。判斷句：「下週我還需要回頭看嗎？」會 → 標重要。
+      <label class="ml-2 text-indigo-600 cursor-pointer"><input type="checkbox" id="wpShowAll" class="mr-1" onchange="document.querySelectorAll('.wp-extra').forEach(r=>r.classList.toggle('hidden',!this.checked))">顯示全部未結案，臨時加選（只影響這次匯出，不會改標註）</label></div>
+    <div class="overflow-auto flex-1 px-3"><table class="w-full text-left">
+      <thead class="text-xs text-slate-500"><tr><th class="px-2 py-1"><input type="checkbox" id="wpAll" class="w-4 h-4" onchange="document.querySelectorAll('.wp-chk').forEach(c=>c.checked=this.checked)"></th><th class="px-2">狀態</th><th class="px-2">任務摘要</th><th class="px-2">期限</th><th class="px-2">預選原因</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="5" class="text-center text-xs text-slate-400 py-8">目前沒有未結案案件</td></tr>'}${open.some(t => hasImportantTag(t.tags)) ? '' : '<tr><td colspan="5" class="text-center text-xs text-slate-400 py-6">還沒有標重要的案件。到列表點 ⭐ 標註，或勾下方「顯示全部」臨時加選。</td></tr>'}</tbody></table></div>
+    <div class="px-5 py-3 border-t flex items-center gap-2 justify-end">
+      <span id="wpCount" class="text-xs text-slate-500 mr-auto"></span>
+      <button type="button" onclick="wpDoExport('copy')" class="px-3 py-1.5 text-sm font-bold text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100">複製 JSON</button>
+      <button type="button" onclick="wpDoExport('file')" class="px-3 py-1.5 text-sm font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700">下載 .json</button>
+    </div></div>`;
+  document.body.appendChild(m);
+  m._tasks = open;
+  const nImp = open.filter(t => hasImportantTag(t.tags)).length;
+  const upd = () => { document.getElementById('wpCount').textContent = `已選 ${document.querySelectorAll('.wp-chk:checked').length} 筆（已標重要 ${nImp} 筆 / 未結案共 ${open.length} 筆）`; };
+  m.addEventListener('change', upd); upd();
+}
+async function wpDoExport(mode) {
+  const m = document.getElementById('wpExportModal');
+  const picked = [...document.querySelectorAll('.wp-chk:checked')].map(c => m._tasks[+c.dataset.i]);
+  if (!picked.length) { alert('請至少勾選一筆'); return; }
+  const json = JSON.stringify({ cards: picked.map(wpBuildCard) }, null, 2);
+  if (mode === 'copy') {
+    try { await navigator.clipboard.writeText(json); alert(`已複製 ${picked.length} 筆，到工作水池「匯入」頁貼上即可`); }
+    catch (e) { prompt('複製失敗，請手動複製：', json); }
+  } else {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    a.download = `工作水池匯入_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+}
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str == null ? "" : String(str);
@@ -2860,6 +4160,7 @@ function openTaskDetail(rowIndex, status, logEnc, tagsEnc, catEnc, vendorEnc, co
   document.getElementById("detailNote").value = ""; 
   document.getElementById("detailNoteDeadline").value = ""; // 💡 每次打開清空備註期限
   document.getElementById("detailTags").value = tagsEnc ? decodeURIComponent(tagsEnc) : ""; 
+  document.getElementById("detailImportant").checked = hasImportantTag(document.getElementById("detailTags").value);
   
   document.getElementById("detailCategory").value = decodeURIComponent(catEnc);
   document.getElementById("detailVendor").value = decodeURIComponent(vendorEnc);
